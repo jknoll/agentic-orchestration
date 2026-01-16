@@ -90,6 +90,10 @@ src/ad_generator/
 
 3. **Video Generation**: The prompt is sent to FreePik's WAN 2.6 model to generate a 5-second video advertisement.
 
+## Limitations
+
+- **Veo3 not available via API**: FreePik's Veo3 model is not currently accessible through their API. This tool uses WAN 2.6 (720p/1080p) instead. Veo3 support will be added when it becomes available via the API.
+
 ## Development
 
 Install dev dependencies:
