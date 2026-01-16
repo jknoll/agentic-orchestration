@@ -1,21 +1,85 @@
 """FreePik API client for video generation."""
 
 import asyncio
+import json
 import os
 from pathlib import Path
 from typing import Optional
 
 import httpx
 
-from .models import VideoGenerationRequest, VideoGenerationResult, VideoResolution, VideoStatus
+from .models import (
+    AspectRatio,
+    VideoDuration,
+    VideoGenerationRequest,
+    VideoGenerationResult,
+    VideoResolution,
+    VideoStatus,
+)
 
 
 class FreePikError(Exception):
     """FreePik API error."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None):
+    def __init__(self, message: str, status_code: Optional[int] = None, error_code: Optional[str] = None):
         super().__init__(message)
         self.status_code = status_code
+        self.error_code = error_code
+
+
+def _parse_error_response(response: httpx.Response) -> tuple[str, Optional[str]]:
+    """
+    Parse an error response from FreePik API.
+
+    Returns:
+        Tuple of (human-readable message, error_code if available)
+    """
+    status_code = response.status_code
+    error_code = None
+
+    # Try to parse JSON error response
+    try:
+        data = response.json()
+
+        # FreePik error format: {"error": {"code": "...", "message": "..."}}
+        # or {"message": "...", "code": "..."}
+        if isinstance(data, dict):
+            error_obj = data.get("error", data)
+            if isinstance(error_obj, dict):
+                error_code = error_obj.get("code")
+                message = error_obj.get("message")
+                if message:
+                    return message, error_code
+
+            # Try top-level message
+            if "message" in data:
+                return data["message"], data.get("code")
+
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Fallback to status code messages
+    status_messages = {
+        400: "Bad request - invalid parameters",
+        401: "Invalid API key",
+        402: "Insufficient credits - please add more credits to your FreePik account",
+        403: "Access forbidden - check your API key permissions",
+        404: "Resource not found",
+        429: "Rate limit exceeded - please wait before retrying",
+        500: "FreePik server error - please try again later",
+        502: "FreePik service temporarily unavailable",
+        503: "FreePik service temporarily unavailable",
+    }
+
+    if status_code in status_messages:
+        return status_messages[status_code], error_code
+
+    # Last resort: use raw response text
+    text = response.text.strip()
+    if text:
+        return f"API error ({status_code}): {text[:200]}", error_code
+
+    return f"API error ({status_code})", error_code
 
 
 class FreePikClient:
@@ -30,11 +94,16 @@ class FreePikClient:
         "wan-v2-6-1080p": "/v1/ai/text-to-video/wan-v2-6-1080p",
     }
 
-    # Size mappings based on resolution
+    # Size mappings based on resolution and aspect ratio
     SIZE_MAP = {
-        VideoResolution.HD_720P: "1280*720",
-        VideoResolution.FHD_1080P: "1920*1080",
+        (VideoResolution.HD_720P, AspectRatio.LANDSCAPE_16_9): "1280*720",
+        (VideoResolution.HD_720P, AspectRatio.PORTRAIT_9_16): "720*1280",
+        (VideoResolution.FHD_1080P, AspectRatio.LANDSCAPE_16_9): "1920*1080",
+        (VideoResolution.FHD_1080P, AspectRatio.PORTRAIT_9_16): "1080*1920",
     }
+
+    # Valid duration values for FreePik (5, 10, 15 seconds)
+    VALID_DURATIONS = {5, 10, 15}
 
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -92,13 +161,32 @@ class FreePikClient:
 
         endpoint = self._get_endpoint(request.resolution)
 
+        # Map duration to valid FreePik values (5, 10, or 15)
+        duration = request.duration.value
+        if duration not in self.VALID_DURATIONS:
+            # Round to nearest valid duration
+            if duration <= 5:
+                duration = 5
+            elif duration <= 10:
+                duration = 10
+            else:
+                duration = 15
+
+        # Get size based on resolution and aspect ratio
+        size_key = (request.resolution, request.aspect_ratio)
+        size = self.SIZE_MAP.get(size_key, "1280*720")
+
         payload = {
             "prompt": request.prompt,
-            "size": self.SIZE_MAP[request.resolution],
-            "duration": "5",  # Default to 5 seconds for ads
+            "size": size,
+            "duration": str(duration),
             "enable_prompt_expansion": True,  # Let AI enhance prompts
             "shot_type": "single",
+            "audio": request.with_audio,  # Enable audio generation
         }
+
+        if request.negative_prompt:
+            payload["negative_prompt"] = request.negative_prompt
 
         if webhook_url:
             payload["webhook_url"] = webhook_url
@@ -113,9 +201,11 @@ class FreePikClient:
                 status=VideoStatus.PENDING,
             )
         except httpx.HTTPStatusError as e:
+            message, error_code = _parse_error_response(e.response)
             raise FreePikError(
-                f"API request failed: {e.response.text}",
+                message,
                 status_code=e.response.status_code,
+                error_code=error_code,
             )
 
     async def check_status(
@@ -182,9 +272,11 @@ class FreePikClient:
                 error_message=error_message,
             )
         except httpx.HTTPStatusError as e:
+            message, error_code = _parse_error_response(e.response)
             raise FreePikError(
-                f"Status check failed: {e.response.text}",
+                f"Status check failed: {message}",
                 status_code=e.response.status_code,
+                error_code=error_code,
             )
 
     async def wait_for_completion(
@@ -257,7 +349,9 @@ class FreePikClient:
 
             return output_path
         except httpx.HTTPStatusError as e:
+            message, error_code = _parse_error_response(e.response)
             raise FreePikError(
-                f"Download failed: {e.response.text}",
+                f"Download failed: {message}",
                 status_code=e.response.status_code,
+                error_code=error_code,
             )
