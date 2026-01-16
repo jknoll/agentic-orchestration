@@ -1,5 +1,6 @@
 
-This is a project which uses a Python Claude Agent SDK agent to take as input:
+This is a project which uses a Python [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) agent to take as input:
+
 1) Product metadata from a reference product detail page.
 
 And outputs:
