@@ -21,6 +21,7 @@ from .metadata_extractor import extract_product_metadata
 from .models import (
     AdScene,
     AdScript,
+    AspectRatio,
     GenerationOutput,
     ProductMetadata,
     VideoDuration,
@@ -64,6 +65,10 @@ Workflow:
 Always use the tools provided and complete all steps."""
 
 
+# Default negative prompt to suppress text overlays
+DEFAULT_NEGATIVE_PROMPT = "text overlays, subtitles, captions, on-screen text, words on screen, logos, watermark, titles, credits, labels, annotations"
+
+
 class AdGeneratorAgent:
     """Agent that orchestrates ad video generation."""
 
@@ -73,6 +78,9 @@ class AdGeneratorAgent:
         freepik_api_key: Optional[str] = None,
         use_veo3: bool = False,
         veo3_quality: bool = False,
+        duration: VideoDuration = VideoDuration.MEDIUM_8,
+        resolution: VideoResolution = VideoResolution.HD_720P,
+        aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
     ):
         """
@@ -83,12 +91,18 @@ class AdGeneratorAgent:
             freepik_api_key: FreePik API key (or uses FREEPIK_API_KEY env var)
             use_veo3: Whether to also generate video using Kie.ai Veo 3
             veo3_quality: Use Veo 3 Quality mode instead of Fast (slower, higher quality)
+            duration: Video duration (5, 8, 10, or 15 seconds)
+            resolution: Video resolution (720p or 1080p)
+            aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
             on_tool_call: Callback for tool call notifications (tool_name, args)
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
         self.use_veo3 = use_veo3
         self.veo3_quality = veo3_quality
+        self.duration = duration
+        self.resolution = resolution
+        self.aspect_ratio = aspect_ratio
         self.on_tool_call = on_tool_call
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
@@ -222,7 +236,10 @@ class AdGeneratorAgent:
         """Generate video using FreePik API."""
         request = VideoGenerationRequest(
             prompt=prompt,
-            resolution=VideoResolution.HD_720P,
+            negative_prompt=DEFAULT_NEGATIVE_PROMPT,
+            resolution=self.resolution,
+            duration=self.duration,
+            aspect_ratio=self.aspect_ratio,
             with_audio=True,
         )
 
@@ -254,9 +271,12 @@ class AdGeneratorAgent:
         """Generate video using Kie.ai Veo 3."""
         request = VideoGenerationRequest(
             prompt=prompt,
-            resolution=VideoResolution.HD_720P,
+            resolution=self.resolution,
+            duration=self.duration,
+            aspect_ratio=self.aspect_ratio,
             with_audio=True,
         )
+        # Note: Veo 3 doesn't support negative_prompt, but the system prompt guides the AI
 
         # Use Fast mode by default, Quality mode if explicitly requested
         use_fast = not self.veo3_quality
