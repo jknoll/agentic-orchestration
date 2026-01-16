@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from claude_agent_sdk import (
     ClaudeAgentOptions,
@@ -16,13 +16,18 @@ from claude_agent_sdk import (
 )
 
 from .freepik_client import FreePikClient, FreePikError
+from .kie_client import KieAIClient, KieAIError
 from .metadata_extractor import extract_product_metadata
 from .models import (
+    AdScene,
+    AdScript,
     GenerationOutput,
     ProductMetadata,
     VideoGenerationRequest,
     VideoGenerationResult,
+    VideoProvider,
     VideoResolution,
+    VideoStatus,
 )
 
 
@@ -41,12 +46,21 @@ When creating video prompts, follow these guidelines:
 - Use vivid, cinematic descriptions for the video prompt
 - Describe camera movements, lighting, and mood
 - Focus on showing the product in an aspirational context
+- Keep the prompt under 500 characters for optimal video generation
+
+IMPORTANT: After crafting your video prompt, you MUST call the generate_video tool with your prompt. The video generation happens automatically - you just need to provide the prompt text.
 
 You have access to tools to:
-1. Fetch product metadata from a URL
-2. Generate a video using the description you create
+1. Fetch product metadata from a URL (get_product_metadata)
+2. Generate a video using the description you create (generate_video)
 
-Always use the tools provided. First fetch the product info, then generate the video with your crafted prompt."""
+Workflow:
+1. First, call get_product_metadata with the product URL
+2. Analyze the product information returned
+3. Craft a compelling video prompt (describe it in your response)
+4. Call generate_video with your crafted prompt
+
+Always use the tools provided and complete all steps."""
 
 
 class AdGeneratorAgent:
@@ -56,6 +70,9 @@ class AdGeneratorAgent:
         self,
         output_dir: Path = Path("./output"),
         freepik_api_key: Optional[str] = None,
+        use_veo3: bool = False,
+        veo3_quality: bool = False,
+        on_tool_call: Optional[Callable[[str, dict], None]] = None,
     ):
         """
         Initialize the ad generator agent.
@@ -63,12 +80,23 @@ class AdGeneratorAgent:
         Args:
             output_dir: Directory to save generated videos
             freepik_api_key: FreePik API key (or uses FREEPIK_API_KEY env var)
+            use_veo3: Whether to also generate video using Kie.ai Veo 3
+            veo3_quality: Use Veo 3 Quality mode instead of Fast (slower, higher quality)
+            on_tool_call: Callback for tool call notifications (tool_name, args)
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
+        self.use_veo3 = use_veo3
+        self.veo3_quality = veo3_quality
+        self.on_tool_call = on_tool_call
         self._product_metadata: Optional[ProductMetadata] = None
-        self._video_result: Optional[VideoGenerationResult] = None
+        self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
+
+    def _log_tool_call(self, tool_name: str, args: dict):
+        """Log a tool call with its arguments."""
+        if self.on_tool_call:
+            self.on_tool_call(tool_name, args)
 
     def _create_tools(self):
         """Create MCP tools for the agent."""
@@ -80,6 +108,7 @@ class AdGeneratorAgent:
         )
         async def get_product_metadata(args: dict[str, Any]) -> dict:
             """Fetch product metadata from URL."""
+            self._log_tool_call("get_product_metadata", args)
             try:
                 url = args["url"]
                 metadata = await extract_product_metadata(url)
@@ -93,71 +122,92 @@ class AdGeneratorAgent:
                     ]
                 }
             except Exception as e:
+                # Create fallback metadata from URL
+                from urllib.parse import urlparse, unquote
+                parsed = urlparse(url)
+                # Extract product name from URL path
+                path_parts = [p for p in parsed.path.split("/") if p]
+                product_slug = path_parts[-1] if path_parts else "product"
+                # Convert slug to readable name
+                product_name = unquote(product_slug).replace("-", " ").replace("_", " ").title()
+
+                self._product_metadata = ProductMetadata(
+                    url=url,
+                    title=product_name,
+                    description=None,
+                    images=[],
+                    price=None,
+                    brand=parsed.netloc.replace("www.", "").split(".")[0].title(),
+                )
                 return {
-                    "content": [{"type": "text", "text": f"Error fetching metadata: {e}"}],
+                    "content": [{"type": "text", "text": f"Error fetching metadata: {e}. Using fallback data from URL: {product_name}"}],
                     "isError": True,
                 }
 
         @tool(
             "generate_video",
-            "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood.",
-            {"prompt": str, "resolution": str},
+            "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood. Keep prompts under 500 characters.",
+            {"prompt": str},
         )
         async def generate_video(args: dict[str, Any]) -> dict:
-            """Generate video from prompt."""
+            """Generate video from prompt using configured providers."""
+            self._log_tool_call("generate_video", args)
             try:
                 prompt = args["prompt"]
-                resolution_str = args.get("resolution", "720p")
-                resolution = (
-                    VideoResolution.FHD_1080P
-                    if "1080" in resolution_str
-                    else VideoResolution.HD_720P
-                )
-
                 self._video_prompt = prompt
 
-                request = VideoGenerationRequest(
-                    prompt=prompt,
-                    resolution=resolution,
-                    with_audio=True,
-                )
+                results = []
+                errors = []
 
-                async with FreePikClient(api_key=self.freepik_api_key) as client:
-                    # Submit generation request
-                    result = await client.generate_video(request)
+                # Generate with FreePik (WAN 2.6)
+                try:
+                    print("\n[FreePik WAN 2.6] Submitting video generation request...")
+                    result = await self._generate_freepik(prompt)
+                    results.append(result)
+                    print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
+                except FreePikError as e:
+                    errors.append(f"FreePik: {e}")
+                    print(f"[FreePik WAN 2.6] Error: {e}")
 
-                    # Wait for completion
-                    result = await client.wait_for_completion(
-                        result.task_id,
-                        resolution=resolution,
-                        timeout_seconds=300,
-                    )
+                # Generate with Kie.ai (Veo 3) if enabled
+                if self.use_veo3:
+                    mode = "Quality" if self.veo3_quality else "Fast"
+                    try:
+                        print(f"\n[Kie.ai Veo 3 {mode}] Submitting video generation request...")
+                        result = await self._generate_kie(prompt)
+                        results.append(result)
+                        print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
+                    except KieAIError as e:
+                        errors.append(f"Kie.ai: {e}")
+                        print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
 
-                    # Download if successful
-                    if result.video_url:
-                        self.output_dir.mkdir(parents=True, exist_ok=True)
-                        output_path = self.output_dir / f"ad_{result.task_id}.mp4"
-                        await client.download_video(result.video_url, output_path)
-                        result = VideoGenerationResult(
-                            task_id=result.task_id,
-                            status=result.status,
-                            video_url=str(output_path),
-                        )
+                self._video_results = results
 
-                    self._video_result = result
-
+                if not results:
                     return {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"Video generated successfully!\nTask ID: {result.task_id}\nStatus: {result.status.value}\nSaved to: {result.video_url}",
-                            }
-                        ]
+                        "content": [{"type": "text", "text": f"All video generations failed: {'; '.join(errors)}"}],
+                        "isError": True,
                     }
-            except FreePikError as e:
+
+                # Build success message
+                lines = ["Video generation completed!"]
+                for r in results:
+                    if r.provider == VideoProvider.FREEPIK:
+                        provider_name = "FreePik WAN 2.6"
+                    else:
+                        veo3_mode = "Quality" if self.veo3_quality else "Fast"
+                        provider_name = f"Kie.ai Veo 3 {veo3_mode}"
+                    lines.append(f"\n{provider_name}:")
+                    lines.append(f"  Task ID: {r.task_id}")
+                    lines.append(f"  Status: {r.status.value}")
+                    if r.local_path:
+                        lines.append(f"  Saved to: {r.local_path}")
+
+                if errors:
+                    lines.append(f"\nWarnings: {'; '.join(errors)}")
+
                 return {
-                    "content": [{"type": "text", "text": f"Video generation failed: {e}"}],
-                    "isError": True,
+                    "content": [{"type": "text", "text": "\n".join(lines)}]
                 }
             except Exception as e:
                 return {
@@ -166,6 +216,71 @@ class AdGeneratorAgent:
                 }
 
         return [get_product_metadata, generate_video]
+
+    async def _generate_freepik(self, prompt: str) -> VideoGenerationResult:
+        """Generate video using FreePik API."""
+        request = VideoGenerationRequest(
+            prompt=prompt,
+            resolution=VideoResolution.HD_720P,
+            with_audio=True,
+        )
+
+        async with FreePikClient(api_key=self.freepik_api_key) as client:
+            result = await client.generate_video(request)
+
+            result = await client.wait_for_completion(
+                result.task_id,
+                resolution=request.resolution,
+                timeout_seconds=300,
+            )
+
+            local_path = None
+            if result.video_url:
+                self.output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = self.output_dir / f"freepik_{result.task_id}.mp4"
+                await client.download_video(result.video_url, output_path)
+                local_path = str(output_path)
+
+            return VideoGenerationResult(
+                task_id=result.task_id,
+                status=result.status,
+                provider=VideoProvider.FREEPIK,
+                video_url=result.video_url,
+                local_path=local_path,
+            )
+
+    async def _generate_kie(self, prompt: str) -> VideoGenerationResult:
+        """Generate video using Kie.ai Veo 3."""
+        request = VideoGenerationRequest(
+            prompt=prompt,
+            resolution=VideoResolution.HD_720P,
+            with_audio=True,
+        )
+
+        # Use Fast mode by default, Quality mode if explicitly requested
+        use_fast = not self.veo3_quality
+        async with KieAIClient(use_fast=use_fast) as client:
+            result = await client.generate_video(request)
+
+            result = await client.wait_for_completion(
+                result.task_id,
+                timeout_seconds=600,
+            )
+
+            local_path = None
+            if result.video_url:
+                self.output_dir.mkdir(parents=True, exist_ok=True)
+                output_path = self.output_dir / f"veo3_{result.task_id}.mp4"
+                await client.download_video(result.video_url, output_path)
+                local_path = str(output_path)
+
+            return VideoGenerationResult(
+                task_id=result.task_id,
+                status=VideoStatus.COMPLETED if result.video_url else VideoStatus.FAILED,
+                provider=VideoProvider.KIE_AI,
+                video_url=result.video_url,
+                local_path=local_path,
+            )
 
     async def generate_ad(self, product_url: str) -> GenerationOutput:
         """
@@ -213,19 +328,18 @@ Focus on making the ad visually compelling and emotionally engaging while highli
                 if isinstance(message, AssistantMessage):
                     for block in message.content:
                         if isinstance(block, TextBlock):
-                            print(f"Agent: {block.text}")
+                            print(f"\nAgent: {block.text}")
                         elif isinstance(block, ToolUseBlock):
-                            print(f"Using tool: {block.name}")
+                            # Tool calls are logged via on_tool_call callback
+                            pass
                 elif isinstance(message, ResultMessage):
-                    print(f"Completed: {message.subtype}")
+                    print(f"\nCompleted: {message.subtype}")
 
         # Compile results
         if not self._product_metadata:
             raise RuntimeError("Failed to extract product metadata")
-        if not self._video_result:
-            raise RuntimeError("Failed to generate video")
-
-        from .models import AdScript, AdScene
+        if not self._video_results:
+            raise RuntimeError("Failed to generate any videos")
 
         # Create a simple script representation
         script = AdScript(
@@ -245,6 +359,6 @@ Focus on making the ad visually compelling and emotionally engaging while highli
             product=self._product_metadata,
             script=script,
             video_prompt=self._video_prompt or "",
-            video_result=self._video_result,
-            output_path=self._video_result.video_url,
+            video_results=self._video_results,
+            output_dir=str(self.output_dir),
         )
