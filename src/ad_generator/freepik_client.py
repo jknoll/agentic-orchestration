@@ -159,14 +159,16 @@ class FreePikClient:
             # Extract video URL if completed
             video_url = None
             if status == VideoStatus.COMPLETED:
-                # The video URL is typically in the output or result field
-                video_url = task_data.get("video", {}).get("url")
+                # Video URL is in the "generated" array
+                generated = task_data.get("generated", [])
+                if generated and len(generated) > 0:
+                    video_url = generated[0]
+                # Fallback to other possible fields
+                if not video_url:
+                    video_url = task_data.get("video", {}).get("url")
                 if not video_url:
                     video_url = task_data.get("output", {}).get("url")
                 if not video_url:
-                    video_url = task_data.get("result", {}).get("url")
-                if not video_url:
-                    # Try direct URL field
                     video_url = task_data.get("url")
 
             error_message = None
