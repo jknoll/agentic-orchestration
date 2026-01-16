@@ -6,6 +6,13 @@ from typing import Optional
 from pydantic import BaseModel, HttpUrl
 
 
+class VideoProvider(str, Enum):
+    """Video generation provider."""
+
+    FREEPIK = "freepik"
+    KIE_AI = "kie_ai"
+
+
 class ProductMetadata(BaseModel):
     """Metadata extracted from a product detail page."""
 
@@ -47,7 +54,9 @@ class VideoGenerationResult(BaseModel):
 
     task_id: str
     status: VideoStatus
+    provider: VideoProvider = VideoProvider.FREEPIK
     video_url: Optional[str] = None
+    local_path: Optional[str] = None
     error_message: Optional[str] = None
 
 
@@ -76,5 +85,5 @@ class GenerationOutput(BaseModel):
     product: ProductMetadata
     script: AdScript
     video_prompt: str
-    video_result: VideoGenerationResult
-    output_path: Optional[str] = None
+    video_results: list[VideoGenerationResult] = []
+    output_dir: Optional[str] = None
