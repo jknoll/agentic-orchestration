@@ -254,6 +254,11 @@ Environment Variables:
 
     args = parser.parse_args()
 
+    # Convert CLI args to enums
+    duration = VideoDuration(args.duration)
+    resolution = VideoResolution.FHD_1080P if args.resolution == "1080p" else VideoResolution.HD_720P
+    aspect_ratio = AspectRatio.PORTRAIT_9_16 if args.aspect_ratio == "9:16" else AspectRatio.LANDSCAPE_16_9
+
     # Load environment variables
     load_dotenv()
 

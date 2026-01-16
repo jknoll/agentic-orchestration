@@ -32,6 +32,22 @@ class VideoResolution(str, Enum):
     FHD_1080P = "1080p"
 
 
+class VideoDuration(int, Enum):
+    """Supported video durations in seconds."""
+
+    SHORT_5 = 5
+    MEDIUM_8 = 8
+    LONG_10 = 10
+    EXTRA_LONG_15 = 15
+
+
+class AspectRatio(str, Enum):
+    """Supported aspect ratios."""
+
+    LANDSCAPE_16_9 = "16:9"
+    PORTRAIT_9_16 = "9:16"
+
+
 class VideoStatus(str, Enum):
     """Video generation status."""
 
@@ -45,7 +61,10 @@ class VideoGenerationRequest(BaseModel):
     """Request to generate a video."""
 
     prompt: str
+    negative_prompt: Optional[str] = None
     resolution: VideoResolution = VideoResolution.HD_720P
+    duration: VideoDuration = VideoDuration.MEDIUM_8
+    aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9
     with_audio: bool = True
 
 

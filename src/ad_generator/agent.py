@@ -23,6 +23,7 @@ from .models import (
     AdScript,
     GenerationOutput,
     ProductMetadata,
+    VideoDuration,
     VideoGenerationRequest,
     VideoGenerationResult,
     VideoProvider,
