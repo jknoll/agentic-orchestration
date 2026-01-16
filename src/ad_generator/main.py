@@ -12,7 +12,7 @@ import anyio
 from dotenv import load_dotenv
 
 from .agent import AdGeneratorAgent
-from .models import AspectRatio, GenerationOutput, VideoDuration, VideoProvider, VideoResolution
+from .models import GenerationOutput, VideoProvider
 
 # Project root directory (where pyproject.toml lives)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -125,9 +125,6 @@ async def run_generator(
     base_output_dir: Path,
     use_veo3: bool = False,
     veo3_quality: bool = False,
-    duration: VideoDuration = VideoDuration.MEDIUM_8,
-    resolution: VideoResolution = VideoResolution.HD_720P,
-    aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
     force: bool = False,
 ) -> None:
     """Run the ad generation workflow."""
@@ -136,7 +133,6 @@ async def run_generator(
     print(f"{'='*60}")
     print(f"\nProduct URL: {product_url}")
     print(f"Output directory: {base_output_dir}")
-    print(f"Duration: {duration.value}s | Resolution: {resolution.value} | Aspect: {aspect_ratio.value}")
     if use_veo3:
         mode = "Quality" if veo3_quality else "Fast"
         print(f"Veo 3 (Kie.ai): Enabled ({mode} mode)")
@@ -160,9 +156,6 @@ async def run_generator(
         output_dir=output_dir,
         use_veo3=use_veo3,
         veo3_quality=veo3_quality,
-        duration=duration,
-        resolution=resolution,
-        aspect_ratio=aspect_ratio,
         on_tool_call=print_tool_call,
     )
 
@@ -254,28 +247,6 @@ Environment Variables:
         help="Use Veo 3 Quality mode instead of Fast (slower, higher quality, $2 vs $0.40)",
     )
     parser.add_argument(
-        "-d",
-        "--duration",
-        type=int,
-        choices=[5, 8, 10, 15],
-        default=8,
-        help="Video duration in seconds (default: 8). FreePik supports 5/10/15; Veo 3 generates ~8s clips.",
-    )
-    parser.add_argument(
-        "-r",
-        "--resolution",
-        choices=["720p", "1080p"],
-        default="720p",
-        help="Video resolution (default: 720p)",
-    )
-    parser.add_argument(
-        "-a",
-        "--aspect-ratio",
-        choices=["16:9", "9:16"],
-        default="16:9",
-        help="Video aspect ratio: 16:9 (landscape) or 9:16 (portrait/vertical) (default: 16:9)",
-    )
-    parser.add_argument(
         "--force",
         action="store_true",
         help="Force regeneration even if output already exists for this URL",
@@ -298,9 +269,6 @@ Environment Variables:
         args.output,
         args.veo3,
         args.veo3_quality,
-        duration,
-        resolution,
-        aspect_ratio,
         args.force,
     )
 

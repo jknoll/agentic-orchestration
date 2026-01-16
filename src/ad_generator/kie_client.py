@@ -7,65 +7,15 @@ from typing import Optional
 
 import httpx
 
-from .models import (
-    AspectRatio,
-    VideoGenerationRequest,
-    VideoGenerationResult,
-    VideoStatus,
-)
+from .models import VideoGenerationRequest, VideoGenerationResult, VideoResolution, VideoStatus
 
 
 class KieAIError(Exception):
     """Kie.ai API error."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None, error_code: Optional[str] = None):
+    def __init__(self, message: str, status_code: Optional[int] = None):
         super().__init__(message)
         self.status_code = status_code
-        self.error_code = error_code
-
-
-def _parse_error_response(response: httpx.Response) -> str:
-    """
-    Parse an error response from Kie.ai API.
-
-    Returns:
-        Human-readable error message
-    """
-    status_code = response.status_code
-
-    # Try to parse JSON error response
-    try:
-        data = response.json()
-        if isinstance(data, dict):
-            # Kie.ai format: {"code": 400, "msg": "..."}
-            if "msg" in data:
-                return data["msg"]
-            if "message" in data:
-                return data["message"]
-    except Exception:
-        pass
-
-    # Fallback to status code messages
-    status_messages = {
-        400: "Bad request - invalid parameters",
-        401: "Invalid API key - check your KIE_API_KEY",
-        402: "Insufficient credits - please add more credits to your Kie.ai account",
-        403: "Access forbidden - check your API key permissions",
-        429: "Rate limit exceeded - please wait before retrying",
-        500: "Kie.ai server error - please try again later",
-        502: "Kie.ai service temporarily unavailable",
-        503: "Kie.ai service temporarily unavailable",
-    }
-
-    if status_code in status_messages:
-        return status_messages[status_code]
-
-    # Last resort: use raw response text
-    text = response.text.strip()
-    if text:
-        return f"API error ({status_code}): {text[:200]}"
-
-    return f"API error ({status_code})"
 
 
 class KieAIClient:
@@ -123,17 +73,13 @@ class KieAIClient:
 
         model = "veo3_fast" if self.use_fast else "veo3"
 
-        # Map our AspectRatio enum to Kie.ai values
-        aspect_ratio = request.aspect_ratio.value  # "16:9" or "9:16"
-
         payload = {
             "prompt": request.prompt,
             "model": model,
             "generationType": "TEXT_2_VIDEO",
-            "aspect_ratio": aspect_ratio,
+            "aspect_ratio": "16:9",
             "enableTranslation": False,  # Prompts are already in English
         }
-        # Note: Veo 3 generates ~8 second clips by default, duration not configurable via API
 
         try:
             response = await self._client.post("/api/v1/veo/generate", json=payload)
@@ -153,7 +99,12 @@ class KieAIClient:
                 status=VideoStatus.PENDING,
             )
         except httpx.HTTPStatusError as e:
-            error_msg = _parse_error_response(e.response)
+            error_msg = "API request failed"
+            try:
+                error_data = e.response.json()
+                error_msg = error_data.get("msg", error_msg)
+            except Exception:
+                pass
             raise KieAIError(error_msg, status_code=e.response.status_code)
 
     async def check_status(self, task_id: str) -> VideoGenerationResult:
@@ -212,9 +163,8 @@ class KieAIClient:
                 error_message=error_message,
             )
         except httpx.HTTPStatusError as e:
-            error_msg = _parse_error_response(e.response)
             raise KieAIError(
-                f"Status check failed: {error_msg}",
+                f"Status check failed: {e.response.text}",
                 status_code=e.response.status_code,
             )
 
@@ -283,8 +233,7 @@ class KieAIClient:
 
             return output_path
         except httpx.HTTPStatusError as e:
-            error_msg = _parse_error_response(e.response)
             raise KieAIError(
-                f"Download failed: {error_msg}",
+                f"Download failed: {e.response.text}",
                 status_code=e.response.status_code,
             )
