@@ -78,3 +78,38 @@ class GenerationOutput(BaseModel):
     video_prompt: str
     video_result: VideoGenerationResult
     output_path: Optional[str] = None
+
+
+# Research Agent Models
+
+
+class ProductResearch(BaseModel):
+    """Structured product research data from AgentQL."""
+
+    product_name: Optional[str] = None
+    price: Optional[str] = None
+    description: Optional[str] = None
+    features: list[str] = []
+    specifications: list[str] = []
+    benefits: list[str] = []
+    target_audience: Optional[str] = None
+    images: list[str] = []
+    url: str
+
+
+class MarketingAnalysis(BaseModel):
+    """Marketing analysis derived from product research."""
+
+    key_features: list[str] = []
+    target_audience_description: str = ""
+    pain_points_addressed: list[str] = []
+    unique_selling_propositions: list[str] = []
+    marketing_hooks: dict[str, str] = {}  # emotional, rational, social
+
+
+class ResearchOutput(BaseModel):
+    """Final output of research agent."""
+
+    product: ProductResearch
+    analysis: Optional[MarketingAnalysis] = None
+    raw_response: Optional[str] = None
