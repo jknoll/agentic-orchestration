@@ -1,106 +1,99 @@
-"""Vercel serverless function handler for AdFlow API using Flask."""
+"""Vercel serverless function handler for AdFlow API."""
 
 import json
 import uuid
 from datetime import datetime
-from flask import Flask, request, jsonify
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse
 
-app = Flask(__name__)
-
-# In-memory job store (note: serverless functions are stateless, so this resets between calls)
+# In-memory job store
 jobs = {}
 
 
-@app.route('/api/health', methods=['GET'])
-def health():
-    """Health check endpoint."""
-    return jsonify({'status': 'ok', 'message': 'AdFlow API is running'})
+class handler(BaseHTTPRequestHandler):
+    """HTTP request handler for Vercel."""
 
+    def do_OPTIONS(self):
+        """Handle CORS preflight."""
+        self.send_response(200)
+        self._send_cors_headers()
+        self.end_headers()
 
-@app.route('/api/jobs', methods=['GET'])
-def list_jobs():
-    """List all jobs."""
-    return jsonify(list(jobs.values()))
+    def do_GET(self):
+        """Handle GET requests."""
+        path = urlparse(self.path).path
 
+        if path == '/api/health':
+            self._json_response({'status': 'ok', 'message': 'AdFlow API running'})
+        elif path == '/api/jobs':
+            self._json_response(list(jobs.values()))
+        elif path.startswith('/api/status/'):
+            job_id = path.split('/')[-1]
+            if job_id in jobs:
+                self._json_response(jobs[job_id])
+            else:
+                self._json_response({'error': 'Job not found'}, 404)
+        else:
+            self._json_response({'error': 'Not found'}, 404)
 
-@app.route('/api/status/<job_id>', methods=['GET'])
-def get_status(job_id):
-    """Get job status."""
-    if job_id in jobs:
-        return jsonify(jobs[job_id])
-    return jsonify({'error': 'Job not found'}), 404
+    def do_POST(self):
+        """Handle POST requests."""
+        path = urlparse(self.path).path
 
+        if path == '/api/generate':
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
 
-@app.route('/api/generate', methods=['POST', 'OPTIONS'])
-def generate():
-    """Start a new generation job."""
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
+            try:
+                data = json.loads(body) if body else {}
+                url = data.get('url')
 
-    try:
-        data = request.get_json()
-        url = data.get('url') if data else None
+                if not url:
+                    self._json_response({'error': 'URL is required'}, 400)
+                    return
 
-        if not url:
-            return jsonify({'error': 'URL is required'}), 400
+                job_id = str(uuid.uuid4())[:8]
+                now = datetime.utcnow().isoformat()
 
-        # Create a new job
-        job_id = str(uuid.uuid4())[:8]
-        now = datetime.utcnow().isoformat()
-
-        jobs[job_id] = {
-            'job_id': job_id,
-            'product_url': url,
-            'stage': 'failed',
-            'progress_percent': 0,
-            'message': 'Demo mode - Video generation requires a persistent server',
-            'created_at': now,
-            'updated_at': now,
-            'error': 'Vercel serverless functions have timeout limits. For full video generation, please run locally or deploy to Railway/Render/Fly.io',
-            'product': None,
-            'video_prompt': None,
-            'video_path': None,
-            'agents': {
-                'research': 'standby',
-                'content': 'standby',
-                'video': 'standby'
-            },
-            'logs': [
-                {
-                    'timestamp': now,
-                    'source': 'System',
-                    'message': 'Job created on Vercel (demo mode)'
-                },
-                {
-                    'timestamp': now,
-                    'source': 'System',
-                    'message': 'Note: Full video generation requires a persistent server'
+                jobs[job_id] = {
+                    'job_id': job_id,
+                    'product_url': url,
+                    'stage': 'failed',
+                    'progress_percent': 0,
+                    'message': 'Demo mode - Full generation requires local server',
+                    'created_at': now,
+                    'updated_at': now,
+                    'error': 'Vercel serverless has timeout limits. Run locally for full video generation.',
+                    'product': None,
+                    'video_prompt': None,
+                    'video_path': None,
+                    'agents': {
+                        'research': 'standby',
+                        'content': 'standby',
+                        'video': 'standby'
+                    },
+                    'logs': [
+                        {'timestamp': now, 'source': 'System', 'message': 'Job created (demo mode)'},
+                        {'timestamp': now, 'source': 'System', 'message': 'Full generation requires local server'}
+                    ]
                 }
-            ]
-        }
 
-        return jsonify({
-            'job_id': job_id,
-            'status': 'queued'
-        })
+                self._json_response({'job_id': job_id, 'status': 'queued'})
+            except json.JSONDecodeError:
+                self._json_response({'error': 'Invalid JSON'}, 400)
+        else:
+            self._json_response({'error': 'Not found'}, 404)
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    def _send_cors_headers(self):
+        """Send CORS headers."""
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
-
-@app.after_request
-def add_cors_headers(response):
-    """Add CORS headers to all responses."""
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    return response
-
-
-# For local testing
-if __name__ == '__main__':
-    app.run(debug=True, port=3000)
+    def _json_response(self, data, status=200):
+        """Send JSON response."""
+        self.send_response(status)
+        self._send_cors_headers()
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
