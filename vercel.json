@@ -1,8 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/health", "destination": "/api/index.py" },
-    { "source": "/api/jobs", "destination": "/api/index.py" },
-    { "source": "/api/status/:id", "destination": "/api/index.py" },
-    { "source": "/api/generate", "destination": "/api/index.py" }
+    { "source": "/api/:path*", "destination": "/api/app.py" }
   ]
 }
