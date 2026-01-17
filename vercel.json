@@ -1,20 +1,13 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.12"
     }
-  ],
-  "routes": [
-    { "src": "/api/health", "dest": "/api/index.py" },
-    { "src": "/api/jobs", "dest": "/api/index.py" },
-    { "src": "/api/status/(.*)", "dest": "/api/index.py" },
-    { "src": "/api/generate", "dest": "/api/index.py" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+  },
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/index.py" },
+    { "source": "/api/jobs", "destination": "/api/index.py" },
+    { "source": "/api/status/:id", "destination": "/api/index.py" },
+    { "source": "/api/generate", "destination": "/api/index.py" }
   ]
 }
