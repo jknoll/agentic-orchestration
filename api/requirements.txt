@@ -1,2 +1,2 @@
-# No external dependencies needed for serverless handlers
-# Using only Python standard library
+fastapi>=0.109.0
+pydantic>=2.0.0
