@@ -1,6 +1,4 @@
 # Output directory
-output/
-
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
