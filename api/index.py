@@ -62,7 +62,7 @@ class handler(BaseHTTPRequestHandler):
                 # Create a new job
                 job_id = str(uuid.uuid4())[:8]
                 now = datetime.utcnow().isoformat()
-                
+
                 jobs[job_id] = {
                     'job_id': job_id,
                     'product_url': url,
@@ -71,7 +71,24 @@ class handler(BaseHTTPRequestHandler):
                     'message': 'Job queued - Note: Video generation requires a persistent server',
                     'created_at': now,
                     'updated_at': now,
-                    'error': 'Vercel serverless functions have timeout limits. For full video generation, please deploy to Railway, Render, or Fly.io'
+                    'error': 'Vercel serverless functions have timeout limits. For full video generation, please run locally or deploy to Railway/Render/Fly.io',
+                    'agents': {
+                        'research': 'standby',
+                        'content': 'standby',
+                        'video': 'standby'
+                    },
+                    'logs': [
+                        {
+                            'timestamp': now,
+                            'source': 'System',
+                            'message': 'Job created on Vercel (demo mode)'
+                        },
+                        {
+                            'timestamp': now,
+                            'source': 'System',
+                            'message': 'Note: Full video generation requires a persistent server'
+                        }
+                    ]
                 }
 
                 self._send_json({

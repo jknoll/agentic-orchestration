@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFlow - Video Showcase</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366F1',
+            secondary: '#10B981',
+            dark: '#0a0e17',
+            surface: '#111827',
+            panel: '#1a2332',
+            accent: {
+              red: '#ef4444',
+              amber: '#f59e0b',
+              cyan: '#06b6d4',
+            }
+          },
+          fontFamily: {
+            display: ['Bebas Neue', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            body: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #0a0e17;
+    }
+
+    /* Scan lines overlay */
+    .scanlines::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.15) 2px,
+        rgba(0, 0, 0, 0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* CRT glow effect */
+    .crt-glow {
+      box-shadow:
+        0 0 60px rgba(99, 102, 241, 0.15),
+        inset 0 0 120px rgba(99, 102, 241, 0.03);
+    }
+
+    /* Status indicator lights */
+    .indicator-on {
+      box-shadow: 0 0 12px currentColor, 0 0 24px currentColor;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 0 12px currentColor, 0 0 24px currentColor;
+        opacity: 1;
+      }
+      50% {
+        box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+        opacity: 0.8;
+      }
+    }
+
+    @keyframes float-subtle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes gradient-x {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .animate-blink {
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    .animate-pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .animate-float {
+      animation: float-subtle 4s ease-in-out infinite;
+    }
+
+    .animate-gradient {
+      background-size: 200% 100%;
+      animation: gradient-x 3s ease infinite;
+    }
+
+    /* Panel styling */
+    .panel {
+      background: linear-gradient(180deg, #1a2332 0%, #151c28 100%);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      position: relative;
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+    }
+
+    /* Grid pattern background */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Noise texture overlay */
+    .noise::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+
+    /* Glowing border */
+    .glow-border {
+      position: relative;
+    }
+
+    .glow-border::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(45deg, #6366F1, #10B981, #6366F1);
+      border-radius: inherit;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .glow-border:hover::after {
+      opacity: 0.5;
+    }
+
+    /* Status badge */
+    .status-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0e17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #6366F1;
+      border-radius: 3px;
+    }
+
+    /* Staggered fade-in */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in:nth-child(1) { animation-delay: 0.1s; }
+    .fade-in:nth-child(2) { animation-delay: 0.15s; }
+    .fade-in:nth-child(3) { animation-delay: 0.2s; }
+    .fade-in:nth-child(4) { animation-delay: 0.25s; }
+    .fade-in:nth-child(5) { animation-delay: 0.3s; }
+    .fade-in:nth-child(6) { animation-delay: 0.35s; }
+    .fade-in:nth-child(7) { animation-delay: 0.4s; }
+    .fade-in:nth-child(8) { animation-delay: 0.45s; }
+
+    /* Video card hover effect */
+    .video-card:hover video {
+      transform: scale(1.02);
+    }
+
+    .video-card video {
+      transition: transform 0.3s ease;
+    }
+  </style>
+</head>
+<body class="bg-dark text-slate-100 min-h-screen overflow-x-hidden">
+
+  <!-- Header -->
+  <header class="py-8 px-4 border-b border-slate-800 relative">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-4 hover:opacity-80 transition-opacity">
+        <div class="relative">
+          <div class="w-12 h-12 bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center rounded">
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+          <div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-secondary rounded-full indicator-on text-secondary"></div>
+        </div>
+        <div>
+          <h1 class="font-display text-3xl tracking-wide text-white">ADFLOW</h1>
+          <div class="h-0.5 w-full bg-gradient-to-r from-primary via-secondary to-primary animate-gradient"></div>
+        </div>
+      </a>
+
+      <!-- Nav -->
+      <div class="flex items-center gap-6">
+        <span class="font-mono text-xs text-slate-600 tracking-wider hidden sm:block">VIDEO_SHOWCASE</span>
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-secondary indicator-on text-secondary"></div>
+          <span class="font-mono text-xs text-slate-500">GALLERY</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="py-20 px-4 relative grid-bg noise">
+    <!-- Floating geometric shapes -->
+    <div class="absolute top-1/4 left-16 w-24 h-24 border border-primary/10 rotate-45 animate-float hidden lg:block" style="animation-delay: 0s;"></div>
+    <div class="absolute bottom-1/4 right-20 w-16 h-16 border border-secondary/10 rounded-full animate-float hidden lg:block" style="animation-delay: 1s;"></div>
+
+    <div class="max-w-7xl mx-auto text-center relative z-10">
+      <div class="flex items-center justify-center gap-4 mb-6">
+        <div class="w-3 h-3 rounded-full bg-accent-red indicator-on text-accent-red animate-blink"></div>
+        <span class="font-mono text-xs text-slate-500 tracking-[0.3em] uppercase">GENERATED CONTENT</span>
+      </div>
+
+      <h2 class="font-display text-5xl md:text-7xl tracking-wide text-white mb-4">VIDEO SHOWCASE</h2>
+      <p class="text-slate-400 text-lg max-w-2xl mx-auto mb-8">
+        AI-generated video advertisements from real product URLs. Each video crafted in seconds by our autonomous agent pipeline.
+      </p>
+
+      <div class="flex items-center justify-center gap-8 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="font-display text-3xl text-primary">19</span>
+          <span class="font-mono text-xs text-slate-500">VIDEOS</span>
+        </div>
+        <div class="w-px h-8 bg-slate-800"></div>
+        <div class="flex items-center gap-2">
+          <span class="font-display text-3xl text-secondary">11</span>
+          <span class="font-mono text-xs text-slate-500">PRODUCTS</span>
+        </div>
+        <div class="w-px h-8 bg-slate-800"></div>
+        <div class="flex items-center gap-2">
+          <span class="font-display text-3xl text-amber-400">6</span>
+          <span class="font-mono text-xs text-slate-500">BRANDS</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Grid Section -->
+  <section class="py-16 px-4 bg-surface/30 relative noise">
+    <div class="max-w-7xl mx-auto">
+      <!-- Section header -->
+      <div class="flex items-center gap-6 mb-12">
+        <div class="flex items-center gap-3">
+          <div class="w-3 h-3 rounded-full bg-primary animate-pulse-glow text-primary"></div>
+          <span class="font-mono text-xs text-slate-500 tracking-[0.2em]">GALLERY_01</span>
+        </div>
+        <div class="h-px flex-1 bg-gradient-to-r from-slate-800 to-transparent"></div>
+        <span class="font-mono text-xs text-primary tracking-wider">19 ITEMS</span>
+      </div>
+
+      <!-- Video Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+        <!-- Video Card: Sony Alpha 7 V -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata" poster="">
+              <source src="output/ilce7m5mb-20260116-140552/freepik_01e4f8f5-635b-4d25-bd50-0ed82851af0a.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Sony</span>
+              <span class="font-mono text-xs text-secondary">$3,099.99</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">Alpha 7 V Camera</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Full-frame Mirrorless Interchangeable Lens Camera</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Sony Alpha 7 V (Veo3) -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Sony</span>
+              <span class="font-mono text-xs text-secondary">$3,099.99</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">Alpha 7 V Camera</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Full-frame Mirrorless Interchangeable Lens Camera</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-FLX10 #1 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-flx10/freepik_d0539d52-8c9b-4326-8e24-75c93d0b3a36.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$1,729.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-FLX10</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional 2-channel DJ controller</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-FLX10 #2 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-flx10/freepik_06b0d5a0-37b3-4fa8-96e9-5321c72d7ba7.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$1,729.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-FLX10</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional 2-channel DJ controller</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-REV7 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-rev7/freepik_f9c909c3-ad24-4442-81dd-08791e804a78.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$1,999.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-REV7</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Motorized jog wheels with On Jog Display</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-REV1 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-rev1/freepik_63f10f01-6bf8-4c55-9a5c-970cb74f0e68.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$299.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-REV1</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Battle-style layout for Serato DJ Lite</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-XP2 #1 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-xp2/freepik_ff9ec84e-b6f8-4206-80d2-3bd920ec5fd0.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$349.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-XP2 #2 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-xp2/freepik_4bc4b3b2-d43b-441a-8dea-2c5cbc5876e6.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$349.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-XP2 Veo3 #1 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$349.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
+          </div>
+        </div>
+
+        <!-- Video Card: DDJ-XP2 Veo3 #2 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_ddj-xp2/veo3_a38a64e7f3d07c405ac67c6326788d47.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$349.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
+          </div>
+        </div>
+
+        <!-- Video Card: XDJ-700 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/pioneerdjstore.com_products_xdj-700/freepik_691549cb-8493-4caa-ac81-a3902d42d8cd.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-secondary">$829.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">XDJ-700</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Compact multi-player with 7-inch touchscreen</p>
+          </div>
+        </div>
+
+        <!-- Video Card: CDJ-3000 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.pioneerdj.com_en_product_player_cdj-3000_black_overview/freepik_eb302231-b006-43ca-8b4f-3e73c3aba6d4.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
+              <span class="font-mono text-xs text-primary">FLAGSHIP</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">CDJ-3000</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional DJ multi player</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Apple Vision Pro -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.apple.com_apple-vision-pro/freepik_22e8941d-e018-4eba-9fa5-ae975048f84b.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Apple</span>
+              <span class="font-mono text-xs text-primary">PREMIUM</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">Vision Pro</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Spatial computing headset with M5 chip</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Apple Vision Pro (Veo3) -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Apple</span>
+              <span class="font-mono text-xs text-primary">PREMIUM</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">Vision Pro</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Spatial computing headset with M5 chip</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Hermes Scarf #1 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_967abcc0-eea3-442a-9a1d-7abbfdc4b70a.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Hermes</span>
+              <span class="font-mono text-xs text-amber-400">LUXURY</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">L'Esprit s'Envole</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Silk scarf 90cm</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Hermes Scarf #2 -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Hermes</span>
+              <span class="font-mono text-xs text-amber-400">LUXURY</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">L'Esprit s'Envole</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Silk scarf 90cm</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Osprey Aether -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/www.osprey.com_aether-trade-plus-100-aethrpl100s21-291/freepik_075143ee-5cbf-439a-8c3c-b6bf2380406b.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Osprey</span>
+              <span class="font-mono text-xs text-secondary">OUTDOOR</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">Aether Plus 100</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">100L technical hiking backpack</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Patagonia R1 Air Fleece -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Patagonia</span>
+              <span class="font-mono text-xs text-secondary">$189.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">R1 Air Fleece Hoody</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Lightweight breathable technical fleece</p>
+          </div>
+        </div>
+
+        <!-- Video Card: Patagonia R1 Air Fleece (Veo3) -->
+        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
+          <div class="aspect-video bg-dark relative scanlines">
+            <video class="w-full h-full object-cover" controls preload="metadata">
+              <source src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/veo3_9e4513510cd389698588f60732fd0608.mp4" type="video/mp4">
+            </video>
+            <div class="absolute top-2 left-2">
+              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-slate-600">Patagonia</span>
+              <span class="font-mono text-xs text-secondary">$189.00</span>
+            </div>
+            <h3 class="font-display text-lg tracking-wide text-white">R1 Air Fleece Hoody</h3>
+            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Lightweight breathable technical fleece</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-20 px-4 relative grid-bg">
+    <div class="max-w-4xl mx-auto">
+      <div class="panel rounded-lg p-8 crt-glow">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-secondary indicator-on text-secondary"></div>
+            <span class="font-mono text-xs text-slate-500 tracking-wider">GENERATION_STATS</span>
+          </div>
+          <span class="status-badge text-secondary">COMPLETE</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <p class="font-display text-4xl text-white mb-1">19</p>
+            <p class="font-mono text-xs text-slate-500">VIDEOS GENERATED</p>
+          </div>
+          <div class="text-center">
+            <p class="font-display text-4xl text-primary mb-1">13</p>
+            <p class="font-mono text-xs text-slate-500">FREEPIK RENDERS</p>
+          </div>
+          <div class="text-center">
+            <p class="font-display text-4xl text-amber-400 mb-1">6</p>
+            <p class="font-mono text-xs text-slate-500">VEO3 RENDERS</p>
+          </div>
+          <div class="text-center">
+            <p class="font-display text-4xl text-secondary mb-1">~60s</p>
+            <p class="font-mono text-xs text-slate-500">AVG GEN TIME</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 px-4 bg-surface/30 relative noise">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="font-display text-4xl md:text-5xl tracking-wide text-white mb-4">CREATE YOUR OWN</h2>
+      <p class="text-slate-400 mb-8">Turn any product URL into a professional video ad in seconds.</p>
+      <a href="/" class="inline-flex items-center gap-3 px-8 py-4 bg-primary font-display text-xl tracking-wider text-white rounded hover:bg-primary/90 transition-colors">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        START GENERATING
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-4 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <!-- Logo -->
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center rounded">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="font-display text-2xl tracking-wide text-white">ADFLOW</span>
+            <p class="font-mono text-xs text-slate-600">v2.4.1</p>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div class="flex items-center gap-8">
+          <a href="/" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">HOME</a>
+          <a href="#" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">DOCS</a>
+          <a href="#" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">GITHUB</a>
+        </div>
+
+        <!-- Status -->
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-secondary indicator-on text-secondary"></div>
+          <span class="font-mono text-xs text-slate-600">ALL SYSTEMS OPERATIONAL</span>
+        </div>
+      </div>
+
+      <div class="mt-8 pt-6 border-t border-slate-800/50 text-center">
+        <p class="font-mono text-xs text-slate-700">
+          &copy; 2025 ADFLOW // BUILT WITH CLAUDE AGENT SDK
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
