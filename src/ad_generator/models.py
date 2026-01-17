@@ -78,3 +78,75 @@ class GenerationOutput(BaseModel):
     video_prompt: str
     video_result: VideoGenerationResult
     output_path: Optional[str] = None
+
+
+# --- Research Models ---
+
+
+class ResearchStatus(str, Enum):
+    """Yutori research task status."""
+
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class PriceTier(BaseModel):
+    """A pricing tier for a product."""
+
+    variant: str
+    price: str
+
+
+class RatingBreakdown(BaseModel):
+    """Breakdown of ratings by star level."""
+
+    five_star: Optional[str] = None
+    four_star: Optional[str] = None
+    three_star: Optional[str] = None
+    two_star: Optional[str] = None
+    one_star: Optional[str] = None
+
+
+class RatingsSummary(BaseModel):
+    """Aggregated ratings information."""
+
+    average_score: Optional[float] = None
+    total_reviews: Optional[int] = None
+    breakdown: Optional[RatingBreakdown] = None
+
+
+class UserReview(BaseModel):
+    """A user review of the product."""
+
+    author: str
+    rating: Optional[int] = None
+    title: Optional[str] = None
+    comment: str
+    verified_purchase: bool = False
+    date: Optional[str] = None
+
+
+class ProductResearchResult(BaseModel):
+    """Structured output from Yutori product research."""
+
+    product_name: str
+    price: Optional[dict] = None  # {base, tiers}
+    key_features: list[str] = []
+    benefits: list[str] = []
+    unique_selling_points: list[str] = []
+    ratings: Optional[RatingsSummary] = None
+    target_audience: list[str] = []
+    user_reviews: list[UserReview] = []
+    research_url: Optional[str] = None  # Yutori view_url for reference
+
+
+class ResearchTaskResponse(BaseModel):
+    """Response from Yutori research task creation/status."""
+
+    task_id: str
+    status: ResearchStatus
+    view_url: Optional[str] = None
+    result: Optional[ProductResearchResult] = None
+    error_message: Optional[str] = None

@@ -24,6 +24,7 @@ from .models import (
     VideoGenerationResult,
     VideoResolution,
 )
+from .yutori_client import YutoriClient, YutoriError
 
 
 SYSTEM_PROMPT = """You are an expert advertising copywriter and video director specializing in short-form video ads for e-commerce products.
@@ -165,7 +166,37 @@ class AdGeneratorAgent:
                     "isError": True,
                 }
 
-        return [get_product_metadata, generate_video]
+        @tool(
+            "research_product",
+            "Research a product to get detailed information including features, pricing, reviews, and target audience. Use this when you need comprehensive product data from the web.",
+            {"product_name": str},
+        )
+        async def research_product(args: dict[str, Any]) -> dict:
+            """Research product information using Yutori API."""
+            try:
+                product_name = args["product_name"]
+                async with YutoriClient() as client:
+                    result = await client.research_product(product_name)
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": json.dumps(result.model_dump(), indent=2),
+                            }
+                        ]
+                    }
+            except YutoriError as e:
+                return {
+                    "content": [{"type": "text", "text": f"Research failed: {e}"}],
+                    "isError": True,
+                }
+            except Exception as e:
+                return {
+                    "content": [{"type": "text", "text": f"Unexpected error: {e}"}],
+                    "isError": True,
+                }
+
+        return [get_product_metadata, generate_video, research_product]
 
     async def generate_ad(self, product_url: str) -> GenerationOutput:
         """
@@ -192,6 +223,7 @@ class AdGeneratorAgent:
             allowed_tools=[
                 "mcp__ad_tools__get_product_metadata",
                 "mcp__ad_tools__generate_video",
+                "mcp__ad_tools__research_product",
             ],
             permission_mode="bypassPermissions",
             max_turns=10,
