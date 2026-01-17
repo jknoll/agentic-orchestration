@@ -1,70 +1,64 @@
 """Generate endpoint."""
 
+from http.server import BaseHTTPRequestHandler
 import json
 import uuid
 from datetime import datetime
 
 
-def handler(request):
-    """Handle POST /api/generate."""
-    # Handle CORS preflight
-    if request.method == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        # Read the request body
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length).decode() if content_length > 0 else "{}"
+
+        try:
+            data = json.loads(body)
+            url = data.get("url", "")
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Invalid JSON body"}).encode())
+            return
+
+        job_id = str(uuid.uuid4())[:8]
+        now = datetime.utcnow().isoformat()
+
+        job = {
+            "job_id": job_id,
+            "product_url": url,
+            "stage": "demo",
+            "progress_percent": 0,
+            "message": "Demo mode - Full generation requires local server",
+            "created_at": now,
+            "updated_at": now,
+            "error": "Vercel serverless has timeout limits. Run locally for full video generation.",
+            "product": None,
+            "video_prompt": None,
+            "video_path": None,
+            "agents": {
+                "research": "standby",
+                "content": "standby",
+                "video": "standby"
             },
-            "body": ""
+            "logs": [
+                {"timestamp": now, "source": "System", "message": "Job created (demo mode)"},
+                {"timestamp": now, "source": "System", "message": "Full generation requires local server"}
+            ]
         }
 
-    headers = {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-    }
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        response = json.dumps({"job_id": job_id, "status": "queued", "job": job})
+        self.wfile.write(response.encode())
 
-    try:
-        body = json.loads(request.body) if request.body else {}
-        url = body.get("url", "")
-    except (json.JSONDecodeError, AttributeError):
-        return {
-            "statusCode": 400,
-            "headers": headers,
-            "body": json.dumps({"error": "Invalid JSON body"})
-        }
-
-    job_id = str(uuid.uuid4())[:8]
-    now = datetime.utcnow().isoformat()
-
-    # In demo mode, return a job that shows the limitation
-    job = {
-        "job_id": job_id,
-        "product_url": url,
-        "stage": "demo",
-        "progress_percent": 0,
-        "message": "Demo mode - Full generation requires local server",
-        "created_at": now,
-        "updated_at": now,
-        "error": "Vercel serverless has timeout limits. Run locally for full video generation.",
-        "product": None,
-        "video_prompt": None,
-        "video_path": None,
-        "agents": {
-            "research": "standby",
-            "content": "standby",
-            "video": "standby"
-        },
-        "logs": [
-            {"timestamp": now, "source": "System", "message": "Job created (demo mode)"},
-            {"timestamp": now, "source": "System", "message": "Full generation requires local server"}
-        ]
-    }
-
-    return {
-        "statusCode": 200,
-        "headers": headers,
-        "body": json.dumps({"job_id": job_id, "status": "queued", "job": job})
-    }
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.end_headers()

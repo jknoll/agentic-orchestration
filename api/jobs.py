@@ -1,20 +1,22 @@
 """List jobs endpoint."""
 
+from http.server import BaseHTTPRequestHandler
 import json
 
-# Shared in-memory job store (note: won't persist across function invocations in serverless)
-jobs = {}
 
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        # In serverless, jobs won't persist between invocations
+        response = json.dumps([])
+        self.wfile.write(response.encode())
 
-def handler(request):
-    """Handle GET /api/jobs."""
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        },
-        "body": json.dumps(list(jobs.values()))
-    }
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.end_headers()
