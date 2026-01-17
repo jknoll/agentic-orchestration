@@ -13,12 +13,20 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api/health",
       "dest": "/api/index.py"
     },
     {
-      "src": "/video-showcase.html",
-      "dest": "/frontend/video-showcase.html"
+      "src": "/api/jobs",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/api/status/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/api/generate",
+      "dest": "/api/index.py"
     },
     {
       "src": "/(.*)",
