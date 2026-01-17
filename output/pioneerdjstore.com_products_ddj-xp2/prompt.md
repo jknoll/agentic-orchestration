@@ -1,0 +1,1 @@
+Cinematic close-up of DJ hands triggering glowing multicolored pads on Pioneer DDJ-XP2 in dark club, neon lights pulsing. Camera pulls back revealing crowd dancing. Dynamic finger drumming on 32 RGB pads, light trails following each tap. Moody purple and blue lighting, smoke effects. Energy builds as Slide FX strip glows. Text overlay: "Unleash Your Sound" then "DDJ-XP2 - $349"

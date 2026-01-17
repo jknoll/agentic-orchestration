@@ -1,0 +1,1 @@
+Dark nightclub scene. Close-up of DJ hands on Pioneer DDJ-FLX10 controller, multicolored LED jog wheels pulsing with beat. Camera pulls back revealing packed dance floor, laser lights syncing to music. Dramatic cinematic lighting, neon purple and blue hues. Energy builds as crowd erupts. Text overlay: "Control The Night" - Pioneer DJ.

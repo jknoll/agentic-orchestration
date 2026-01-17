@@ -1,0 +1,1 @@
+A woman runs along a misty mountain ridge at golden hour, wearing an elegant green fleece hoody. Close-up reveals the airy texture as wind flows through. She pauses at a summit, arms wide, breathing freely. Cinematic drone shot pulls back revealing vast peaks. Soft natural lighting, earthy tones, feeling of liberation. Text fades in: "Breathe Free. R1 Air."

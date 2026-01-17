@@ -1,0 +1,1 @@
+Cinematic close-up of DJ hands scratching on a sleek black Pioneer DDJ-REV1 controller, neon purple and blue club lights pulsing. Camera pulls back dramatically revealing the full battle-style layout. Moody studio atmosphere with smoke effects. Quick cut to hero product shot glowing under spotlight. Dynamic, energetic mood. 8 seconds.
