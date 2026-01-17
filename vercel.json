@@ -1,36 +1,18 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "frontend/**",
-      "use": "@vercel/static"
-    }
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/index.py" },
+    { "source": "/api/jobs", "destination": "/api/index.py" },
+    { "source": "/api/status/:id", "destination": "/api/index.py" },
+    { "source": "/api/generate", "destination": "/api/index.py" }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/api/health",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/api/jobs",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/api/status/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/api/generate",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
     }
   ]
 }
