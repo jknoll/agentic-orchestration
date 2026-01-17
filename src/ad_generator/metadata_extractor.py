@@ -1,7 +1,8 @@
 """Extract product metadata from web pages."""
 
+import asyncio
 import json
-import re
+import os
 from typing import Any, Optional
 from urllib.parse import urljoin
 
@@ -9,11 +10,47 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .models import ProductMetadata
+from .tinyfish_client import TinyFishClient, TinyFishError
 
 
 async def extract_product_metadata(url: str) -> ProductMetadata:
     """
     Extract product metadata from a URL using multiple strategies.
+
+    Runs both TinyFish AI extraction and HTML parsing, then merges results.
+    TinyFish data is preferred when available.
+    """
+    # Start HTML extraction
+    html_task = asyncio.create_task(_extract_via_html(url))
+
+    # Try TinyFish extraction if API key is available
+    tinyfish_data = None
+    if os.environ.get("MINO_API_KEY"):
+        try:
+            print("[TinyFish] Starting AI-powered metadata extraction...")
+            tinyfish_data = await _extract_via_tinyfish(url)
+            print("[TinyFish] Extraction complete")
+        except TinyFishError as e:
+            print(f"[TinyFish] Extraction failed: {e}")
+        except Exception as e:
+            print(f"[TinyFish] Unexpected error: {e}")
+
+    # Wait for HTML extraction
+    html_metadata = await html_task
+
+    # Merge results, preferring TinyFish data
+    return _merge_metadata(html_metadata, tinyfish_data, url)
+
+
+async def _extract_via_tinyfish(url: str) -> Optional[dict]:
+    """Extract metadata using TinyFish AI."""
+    async with TinyFishClient() as client:
+        return await client.extract_product_metadata(url)
+
+
+async def _extract_via_html(url: str) -> ProductMetadata:
+    """
+    Extract product metadata from HTML using multiple strategies.
 
     Tries extraction in order of reliability:
     1. JSON-LD structured data (schema.org Product)
@@ -21,28 +58,103 @@ async def extract_product_metadata(url: str) -> ProductMetadata:
     3. Standard meta tags
     4. Fallback to page content
     """
-    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-        }
-        response = await client.get(url, headers=headers)
-        response.raise_for_status()
-        html = response.text
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+            }
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            html = response.text
 
-    soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(html, "lxml")
 
-    # Try JSON-LD first
-    metadata = _extract_from_json_ld(soup, url)
-    if metadata and metadata.title:
-        return metadata
+        # Try JSON-LD first
+        metadata = _extract_from_json_ld(soup, url)
+        if metadata and metadata.title:
+            return metadata
 
-    # Try Open Graph
-    metadata = _extract_from_open_graph(soup, url)
-    if metadata and metadata.title:
-        return metadata
+        # Try Open Graph
+        metadata = _extract_from_open_graph(soup, url)
+        if metadata and metadata.title:
+            return metadata
 
-    # Fallback to generic extraction
-    return _extract_fallback(soup, url)
+        # Fallback to generic extraction
+        return _extract_fallback(soup, url)
+
+    except Exception as e:
+        print(f"[HTML] Extraction failed: {e}")
+        # Return empty metadata on failure
+        return ProductMetadata(
+            title="",
+            description=None,
+            images=[],
+            price=None,
+            brand=None,
+            features=[],
+            url=url,
+        )
+
+
+def _merge_metadata(
+    html_metadata: ProductMetadata,
+    tinyfish_data: Optional[dict],
+    url: str,
+) -> ProductMetadata:
+    """
+    Merge metadata from HTML and TinyFish sources.
+
+    TinyFish data is preferred when available and non-empty.
+    Lists (images, features) are combined with unique values.
+    """
+    if tinyfish_data is None:
+        return html_metadata
+
+    # Helper to get non-empty value, preferring TinyFish
+    def prefer_tinyfish(tf_value: Any, html_value: Any) -> Any:
+        if tf_value is not None and tf_value != "" and tf_value != []:
+            return tf_value
+        return html_value
+
+    # Extract TinyFish values (handle both dict and potential nested structure)
+    tf_title = tinyfish_data.get("title", "")
+    tf_description = tinyfish_data.get("description")
+    tf_price = tinyfish_data.get("price")
+    tf_brand = tinyfish_data.get("brand")
+    tf_images = tinyfish_data.get("images", [])
+    tf_features = tinyfish_data.get("features", [])
+
+    # Ensure lists are actually lists
+    if not isinstance(tf_images, list):
+        tf_images = [tf_images] if tf_images else []
+    if not isinstance(tf_features, list):
+        tf_features = [tf_features] if tf_features else []
+
+    # Merge images (combine unique URLs)
+    merged_images = []
+    seen_images = set()
+    for img in tf_images + html_metadata.images:
+        if img and img not in seen_images:
+            merged_images.append(img)
+            seen_images.add(img)
+
+    # Merge features (combine unique)
+    merged_features = []
+    seen_features = set()
+    for feature in tf_features + html_metadata.features:
+        if feature and feature not in seen_features:
+            merged_features.append(feature)
+            seen_features.add(feature)
+
+    return ProductMetadata(
+        title=prefer_tinyfish(tf_title, html_metadata.title) or "Unknown Product",
+        description=prefer_tinyfish(tf_description, html_metadata.description),
+        images=merged_images,
+        price=prefer_tinyfish(tf_price, html_metadata.price),
+        brand=prefer_tinyfish(tf_brand, html_metadata.brand),
+        features=merged_features,
+        url=url,
+    )
 
 
 def _extract_from_json_ld(soup: BeautifulSoup, url: str) -> Optional[ProductMetadata]:
