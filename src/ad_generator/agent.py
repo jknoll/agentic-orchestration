@@ -18,6 +18,7 @@ from claude_agent_sdk import (
 from .freepik_client import FreePikClient, FreePikError
 from .kie_client import KieAIClient, KieAIError
 from .metadata_extractor import extract_product_metadata
+from .system_prompt import build_system_prompt
 from .models import (
     AdScene,
     AdScript,
@@ -31,38 +32,6 @@ from .models import (
     VideoResolution,
     VideoStatus,
 )
-
-
-SYSTEM_PROMPT = """You are an expert advertising copywriter and video director specializing in short-form video ads for e-commerce products.
-
-Your task is to create compelling video advertisements by:
-1. Analyzing product information to understand its key selling points
-2. Crafting a persuasive video script optimized for short attention spans
-3. Writing an effective video generation prompt that captures the essence of the ad
-
-When creating video prompts, follow these guidelines:
-- Keep it under 8 seconds total
-- Start with a hook that grabs attention in the first 2 seconds
-- Highlight the product's main benefit or unique value proposition
-- End with a clear call-to-action
-- Use vivid, cinematic descriptions for the video prompt
-- Describe camera movements, lighting, and mood
-- Focus on showing the product in an aspirational context
-- Keep the prompt under 500 characters for optimal video generation
-
-IMPORTANT: After crafting your video prompt, you MUST call the generate_video tool with your prompt. The video generation happens automatically - you just need to provide the prompt text.
-
-You have access to tools to:
-1. Fetch product metadata from a URL (get_product_metadata)
-2. Generate a video using the description you create (generate_video)
-
-Workflow:
-1. First, call get_product_metadata with the product URL
-2. Analyze the product information returned
-3. Craft a compelling video prompt (describe it in your response)
-4. Call generate_video with your crafted prompt
-
-Always use the tools provided and complete all steps."""
 
 
 # Default negative prompt to suppress text overlays
@@ -81,6 +50,8 @@ class AdGeneratorAgent:
         duration: VideoDuration = VideoDuration.MEDIUM_8,
         resolution: VideoResolution = VideoResolution.HD_720P,
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
+        voice_over: bool = False,
+        presenter: bool = False,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
     ):
         """
@@ -94,6 +65,8 @@ class AdGeneratorAgent:
             duration: Video duration (5, 8, 10, or 15 seconds)
             resolution: Video resolution (720p or 1080p)
             aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
+            voice_over: Include voice-over narration in the video
+            presenter: Include on-camera human presenter in the video
             on_tool_call: Callback for tool call notifications (tool_name, args)
         """
         self.output_dir = output_dir
@@ -103,6 +76,8 @@ class AdGeneratorAgent:
         self.duration = duration
         self.resolution = resolution
         self.aspect_ratio = aspect_ratio
+        self.voice_over = voice_over
+        self.presenter = presenter
         self.on_tool_call = on_tool_call
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
@@ -193,8 +168,18 @@ class AdGeneratorAgent:
                         results.append(result)
                         print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
                     except KieAIError as e:
-                        errors.append(f"Kie.ai: {e}")
-                        print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
+                        error_str = str(e)
+                        errors.append(f"Kie.ai: {error_str}")
+                        # Make credit errors more visible
+                        if "insufficient credits" in error_str.lower() or "credit" in error_str.lower():
+                            print(f"\n{'='*60}")
+                            print(f"[Kie.ai Veo 3 {mode}] CREDIT ERROR")
+                            print(f"{'='*60}")
+                            print(f"You have run out of Kie.ai credits.")
+                            print(f"Please add more credits at: https://kie.ai")
+                            print(f"{'='*60}\n")
+                        else:
+                            print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
 
                 self._video_results = results
 
@@ -322,8 +307,14 @@ class AdGeneratorAgent:
             tools=tools,
         )
 
+        # Build system prompt based on mode flags
+        system_prompt = build_system_prompt(
+            voice_over=self.voice_over,
+            presenter=self.presenter,
+        )
+
         options = ClaudeAgentOptions(
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             mcp_servers={"ad_tools": mcp_server},
             allowed_tools=[
                 "mcp__ad_tools__get_product_metadata",
