@@ -25,6 +25,7 @@ from .models import (
     AspectRatio,
     GenerationOutput,
     ProductMetadata,
+    ShotType,
     VideoDuration,
     VideoGenerationRequest,
     VideoGenerationResult,
@@ -47,11 +48,12 @@ class AdGeneratorAgent:
         freepik_api_key: Optional[str] = None,
         use_veo3: bool = False,
         veo3_quality: bool = False,
-        duration: VideoDuration = VideoDuration.MEDIUM_8,
-        resolution: VideoResolution = VideoResolution.HD_720P,
+        duration: VideoDuration = VideoDuration.EXTRA_LONG_15,
+        resolution: VideoResolution = VideoResolution.FHD_1080P,
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
         voice_over: bool = False,
         presenter: bool = False,
+        multi_shot: bool = False,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
     ):
         """
@@ -67,6 +69,7 @@ class AdGeneratorAgent:
             aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
             voice_over: Include voice-over narration in the video
             presenter: Include on-camera human presenter in the video
+            multi_shot: Force multi-shot mode with scene transitions (FreePik only)
             on_tool_call: Callback for tool call notifications (tool_name, args)
         """
         self.output_dir = output_dir
@@ -78,10 +81,12 @@ class AdGeneratorAgent:
         self.aspect_ratio = aspect_ratio
         self.voice_over = voice_over
         self.presenter = presenter
+        self.multi_shot = multi_shot
         self.on_tool_call = on_tool_call
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
+        self._shot_type: ShotType = ShotType.MULTI if multi_shot else ShotType.SINGLE
 
     def _log_tool_call(self, tool_name: str, args: dict):
         """Log a tool call with its arguments."""
@@ -134,11 +139,15 @@ class AdGeneratorAgent:
                     "isError": True,
                 }
 
-        @tool(
-            "generate_video",
-            "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood. Keep prompts under 500 characters.",
-            {"prompt": str},
-        )
+        # Build tool description and schema based on multi_shot mode
+        if self.multi_shot:
+            tool_desc = "Generate a multi-shot video advertisement using the provided prompt. Structure your prompt with [Shot N: description] format for each scene. Include camera angles, transitions, and visual narrative."
+            tool_schema = {"prompt": str}
+        else:
+            tool_desc = "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood. Keep prompts under 500 characters. Use shot_type='multi' for longer videos (10-15s) that need multiple scenes."
+            tool_schema = {"prompt": str, "shot_type": str}
+
+        @tool("generate_video", tool_desc, tool_schema)
         async def generate_video(args: dict[str, Any]) -> dict:
             """Generate video from prompt using configured providers."""
             self._log_tool_call("generate_video", args)
@@ -146,13 +155,25 @@ class AdGeneratorAgent:
                 prompt = args["prompt"]
                 self._video_prompt = prompt
 
+                # Determine shot type
+                if self.multi_shot:
+                    # Forced multi-shot mode
+                    shot_type = ShotType.MULTI
+                else:
+                    # Agent decides or defaults to single
+                    shot_type_str = args.get("shot_type", "single").lower()
+                    shot_type = ShotType.MULTI if shot_type_str == "multi" else ShotType.SINGLE
+
+                self._shot_type = shot_type
+
                 results = []
                 errors = []
 
                 # Generate with FreePik (WAN 2.6)
                 try:
-                    print("\n[FreePik WAN 2.6] Submitting video generation request...")
-                    result = await self._generate_freepik(prompt)
+                    shot_mode = "multi-shot" if shot_type == ShotType.MULTI else "single-shot"
+                    print(f"\n[FreePik WAN 2.6] Submitting {shot_mode} video generation request...")
+                    result = await self._generate_freepik(prompt, shot_type)
                     results.append(result)
                     print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
                 except FreePikError as e:
@@ -217,7 +238,7 @@ class AdGeneratorAgent:
 
         return [get_product_metadata, generate_video]
 
-    async def _generate_freepik(self, prompt: str) -> VideoGenerationResult:
+    async def _generate_freepik(self, prompt: str, shot_type: ShotType = ShotType.SINGLE) -> VideoGenerationResult:
         """Generate video using FreePik API."""
         request = VideoGenerationRequest(
             prompt=prompt,
@@ -225,6 +246,7 @@ class AdGeneratorAgent:
             resolution=self.resolution,
             duration=self.duration,
             aspect_ratio=self.aspect_ratio,
+            shot_type=shot_type,
             with_audio=True,
         )
 
@@ -311,6 +333,8 @@ class AdGeneratorAgent:
         system_prompt = build_system_prompt(
             voice_over=self.voice_over,
             presenter=self.presenter,
+            multi_shot=self.multi_shot,
+            allow_shot_type_choice=not self.multi_shot,  # Let agent choose if not forced
         )
 
         options = ClaudeAgentOptions(

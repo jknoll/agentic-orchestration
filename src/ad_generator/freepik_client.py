@@ -10,6 +10,7 @@ import httpx
 
 from .models import (
     AspectRatio,
+    ShotType,
     VideoDuration,
     VideoGenerationRequest,
     VideoGenerationResult,
@@ -181,7 +182,7 @@ class FreePikClient:
             "size": size,
             "duration": str(duration),
             "enable_prompt_expansion": True,  # Let AI enhance prompts
-            "shot_type": "single",
+            "shot_type": request.shot_type.value,  # single or multi
             "audio": request.with_audio,  # Enable audio generation
         }
 

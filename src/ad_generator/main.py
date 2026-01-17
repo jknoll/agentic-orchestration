@@ -125,10 +125,13 @@ async def run_generator(
     base_output_dir: Path,
     use_veo3: bool = False,
     veo3_quality: bool = False,
-    duration: VideoDuration = VideoDuration.MEDIUM_8,
-    resolution: VideoResolution = VideoResolution.HD_720P,
+    duration: VideoDuration = VideoDuration.EXTRA_LONG_15,
+    resolution: VideoResolution = VideoResolution.FHD_1080P,
     aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
     force: bool = False,
+    voice_over: bool = False,
+    presenter: bool = False,
+    multi_shot: bool = False,
 ) -> None:
     """Run the ad generation workflow."""
     print(f"{'='*60}")
@@ -142,6 +145,12 @@ async def run_generator(
         print(f"Veo 3 (Kie.ai): Enabled ({mode} mode)")
     else:
         print(f"Veo 3 (Kie.ai): Disabled")
+    if voice_over:
+        print(f"Voice-Over: Enabled")
+    if presenter:
+        print(f"Presenter: Enabled")
+    if multi_shot:
+        print(f"Multi-Shot: Enabled (scene transitions)")
     print()
 
     # Create output directory based on URL
@@ -163,6 +172,9 @@ async def run_generator(
         duration=duration,
         resolution=resolution,
         aspect_ratio=aspect_ratio,
+        voice_over=voice_over,
+        presenter=presenter,
+        multi_shot=multi_shot,
         on_tool_call=print_tool_call,
     )
 
@@ -258,15 +270,15 @@ Environment Variables:
         "--duration",
         type=int,
         choices=[5, 8, 10, 15],
-        default=8,
-        help="Video duration in seconds (default: 8). FreePik supports 5/10/15; Veo 3 generates ~8s clips.",
+        default=15,
+        help="Video duration in seconds (default: 15). FreePik supports 5/10/15; Veo 3 generates ~8s clips.",
     )
     parser.add_argument(
         "-r",
         "--resolution",
         choices=["720p", "1080p"],
-        default="720p",
-        help="Video resolution (default: 720p)",
+        default="1080p",
+        help="Video resolution (default: 1080p)",
     )
     parser.add_argument(
         "-a",
@@ -279,6 +291,21 @@ Environment Variables:
         "--force",
         action="store_true",
         help="Force regeneration even if output already exists for this URL",
+    )
+    parser.add_argument(
+        "--voice-over",
+        action="store_true",
+        help="Include voice-over narration with a spoken script and audio track",
+    )
+    parser.add_argument(
+        "--presenter",
+        action="store_true",
+        help="Include an on-camera human presenter speaking a script",
+    )
+    parser.add_argument(
+        "--multi-shot",
+        action="store_true",
+        help="Force multi-shot mode with scene transitions (recommended for 10-15s videos)",
     )
 
     args = parser.parse_args()
@@ -305,6 +332,9 @@ Environment Variables:
         resolution,
         aspect_ratio,
         args.force,
+        args.voice_over,
+        args.presenter,
+        args.multi_shot,
     )
 
 

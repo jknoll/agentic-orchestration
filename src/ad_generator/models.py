@@ -48,6 +48,13 @@ class AspectRatio(str, Enum):
     PORTRAIT_9_16 = "9:16"
 
 
+class ShotType(str, Enum):
+    """Video shot type for FreePik WAN 2.6."""
+
+    SINGLE = "single"  # Single continuous shot
+    MULTI = "multi"    # Multi-shot with scene transitions
+
+
 class VideoStatus(str, Enum):
     """Video generation status."""
 
@@ -62,9 +69,10 @@ class VideoGenerationRequest(BaseModel):
 
     prompt: str
     negative_prompt: Optional[str] = None
-    resolution: VideoResolution = VideoResolution.HD_720P
-    duration: VideoDuration = VideoDuration.MEDIUM_8
+    resolution: VideoResolution = VideoResolution.FHD_1080P
+    duration: VideoDuration = VideoDuration.EXTRA_LONG_15
     aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9
+    shot_type: ShotType = ShotType.SINGLE
     with_audio: bool = True
 
 
