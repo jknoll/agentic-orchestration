@@ -7,7 +7,7 @@ from typing import Optional
 
 import httpx
 
-from .models import VideoGenerationRequest, VideoGenerationResult, VideoResolution, VideoStatus
+from .models import AspectRatio, VideoGenerationRequest, VideoGenerationResult, VideoStatus
 
 
 class KieAIError(Exception):
@@ -16,6 +16,39 @@ class KieAIError(Exception):
     def __init__(self, message: str, status_code: Optional[int] = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+def _parse_error_response(response: httpx.Response) -> str:
+    """Parse an error response from Kie.ai API."""
+    status_code = response.status_code
+
+    try:
+        data = response.json()
+        if isinstance(data, dict):
+            if "msg" in data:
+                return data["msg"]
+            if "message" in data:
+                return data["message"]
+    except Exception:
+        pass
+
+    status_messages = {
+        400: "Bad request - invalid parameters",
+        401: "Invalid API key - check your KIE_API_KEY",
+        402: "Insufficient credits - please add more credits to your Kie.ai account",
+        403: "Access forbidden - check your API key permissions",
+        429: "Rate limit exceeded - please wait before retrying",
+        500: "Kie.ai server error - please try again later",
+    }
+
+    if status_code in status_messages:
+        return status_messages[status_code]
+
+    text = response.text.strip()
+    if text:
+        return f"API error ({status_code}): {text[:200]}"
+
+    return f"API error ({status_code})"
 
 
 class KieAIClient:
@@ -73,13 +106,17 @@ class KieAIClient:
 
         model = "veo3_fast" if self.use_fast else "veo3"
 
+        # Map aspect ratio to Kie.ai format
+        aspect_ratio = request.aspect_ratio.value if request.aspect_ratio else "16:9"
+
         payload = {
             "prompt": request.prompt,
             "model": model,
             "generationType": "TEXT_2_VIDEO",
-            "aspect_ratio": "16:9",
+            "aspect_ratio": aspect_ratio,
             "enableTranslation": False,  # Prompts are already in English
         }
+        # Note: Veo 3 generates ~8 second clips by default, duration not configurable
 
         try:
             response = await self._client.post("/api/v1/veo/generate", json=payload)
@@ -99,12 +136,7 @@ class KieAIClient:
                 status=VideoStatus.PENDING,
             )
         except httpx.HTTPStatusError as e:
-            error_msg = "API request failed"
-            try:
-                error_data = e.response.json()
-                error_msg = error_data.get("msg", error_msg)
-            except Exception:
-                pass
+            error_msg = _parse_error_response(e.response)
             raise KieAIError(error_msg, status_code=e.response.status_code)
 
     async def check_status(self, task_id: str) -> VideoGenerationResult:
@@ -163,8 +195,9 @@ class KieAIClient:
                 error_message=error_message,
             )
         except httpx.HTTPStatusError as e:
+            error_msg = _parse_error_response(e.response)
             raise KieAIError(
-                f"Status check failed: {e.response.text}",
+                f"Status check failed: {error_msg}",
                 status_code=e.response.status_code,
             )
 
@@ -233,7 +266,8 @@ class KieAIClient:
 
             return output_path
         except httpx.HTTPStatusError as e:
+            error_msg = _parse_error_response(e.response)
             raise KieAIError(
-                f"Download failed: {e.response.text}",
+                f"Download failed: {error_msg}",
                 status_code=e.response.status_code,
             )

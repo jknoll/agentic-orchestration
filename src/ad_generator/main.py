@@ -283,6 +283,9 @@ Environment Variables:
 
     args = parser.parse_args()
 
+    # If --veo3-quality is set, automatically enable veo3
+    use_veo3 = args.veo3 or args.veo3_quality
+
     # Convert CLI args to enums
     duration = VideoDuration(args.duration)
     resolution = VideoResolution.FHD_1080P if args.resolution == "1080p" else VideoResolution.HD_720P
@@ -296,7 +299,7 @@ Environment Variables:
         run_generator,
         args.url,
         args.output,
-        args.veo3,
+        use_veo3,
         args.veo3_quality,
         duration,
         resolution,
