@@ -427,104 +427,82 @@
         <!-- Status header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-dark/50">
           <div class="flex items-center gap-3">
-            <div class="w-2 h-2 rounded-full bg-primary animate-pulse-glow text-primary"></div>
+            <div id="status-indicator" class="w-2 h-2 rounded-full bg-slate-600"></div>
             <span class="font-mono text-sm text-white">CAMPAIGN_GENERATION</span>
           </div>
           <div class="flex items-center gap-4">
-            <span class="font-mono text-xs text-slate-600">ELAPSED: 00:42</span>
-            <span class="font-mono text-xs text-primary">65% COMPLETE</span>
+            <span id="elapsed-time" class="font-mono text-xs text-slate-600">ELAPSED: --:--</span>
+            <span id="header-progress" class="font-mono text-xs text-slate-600">READY</span>
           </div>
         </div>
 
-        <!-- Status items -->
-        <div class="p-6 space-y-6">
-          <!-- Research Agent - Complete -->
-          <div class="flex items-start gap-4">
+        <!-- Agent Status Container -->
+        <div id="agents-container" class="p-6 space-y-6">
+          <!-- Research Agent -->
+          <div id="agent-research-row" class="flex items-start gap-4 opacity-50">
             <div class="relative">
-              <div class="w-10 h-10 rounded bg-secondary/20 border border-secondary/30 flex items-center justify-center">
-                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-              <div class="absolute top-full left-1/2 w-px h-6 bg-gradient-to-b from-secondary/30 to-transparent -translate-x-1/2"></div>
-            </div>
-            <div class="flex-1 pt-1">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-display text-lg tracking-wide text-white">RESEARCH AGENT</span>
-                <span class="status-badge text-secondary bg-secondary/10 px-2 py-1 rounded">DONE</span>
-              </div>
-              <p class="font-mono text-xs text-slate-500">Extracted product metadata and target audience</p>
-            </div>
-          </div>
-
-          <!-- Content Agent - Complete -->
-          <div class="flex items-start gap-4">
-            <div class="relative">
-              <div class="w-10 h-10 rounded bg-secondary/20 border border-secondary/30 flex items-center justify-center">
-                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-              <div class="absolute top-full left-1/2 w-px h-6 bg-gradient-to-b from-secondary/30 to-transparent -translate-x-1/2"></div>
-            </div>
-            <div class="flex-1 pt-1">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-display text-lg tracking-wide text-white">CONTENT AGENT</span>
-                <span class="status-badge text-secondary bg-secondary/10 px-2 py-1 rounded">DONE</span>
-              </div>
-              <p class="font-mono text-xs text-slate-500">Generated ad script and marketing copy</p>
-            </div>
-          </div>
-
-          <!-- Video Agent - In Progress -->
-          <div class="flex items-start gap-4">
-            <div class="relative">
-              <div class="w-10 h-10 rounded bg-primary/20 border border-primary/30 flex items-center justify-center animate-border-pulse">
-                <svg class="w-5 h-5 text-primary animate-rotate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              <div id="agent-research-icon" class="w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
               </div>
               <div class="absolute top-full left-1/2 w-px h-6 bg-gradient-to-b from-slate-800 to-transparent -translate-x-1/2"></div>
             </div>
             <div class="flex-1 pt-1">
               <div class="flex items-center justify-between mb-1">
-                <span class="font-display text-lg tracking-wide text-white">VIDEO AGENT</span>
-                <span class="status-badge text-primary bg-primary/10 px-2 py-1 rounded animate-blink">PROCESSING</span>
+                <span class="font-display text-lg tracking-wide text-slate-500">RESEARCH AGENT</span>
+                <span id="agent-research-status" class="status-badge text-slate-600 bg-slate-800 px-2 py-1 rounded">STANDBY</span>
               </div>
-              <p class="font-mono text-xs text-slate-500 mb-3">Generating AI video advertisement</p>
-
-              <!-- Sub-tasks -->
-              <div class="ml-4 space-y-2">
-                <div class="flex items-center gap-3">
-                  <div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-                  <span class="font-mono text-xs text-slate-400">prompt_generation <span class="text-secondary">DONE</span></span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-                  <span class="font-mono text-xs text-slate-400">api_request <span class="text-secondary">DONE</span></span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse-glow text-primary"></div>
-                  <span class="font-mono text-xs text-slate-400">rendering <span class="text-primary">45%</span></span>
-                </div>
-              </div>
+              <p id="agent-research-desc" class="font-mono text-xs text-slate-600">Extracts product metadata using TinyFish AI</p>
             </div>
           </div>
 
-          <!-- Website Agent - Pending -->
-          <div class="flex items-start gap-4 opacity-50">
-            <div class="w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center">
-              <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+          <!-- Content Agent -->
+          <div id="agent-content-row" class="flex items-start gap-4 opacity-50">
+            <div class="relative">
+              <div id="agent-content-icon" class="w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </div>
+              <div class="absolute top-full left-1/2 w-px h-6 bg-gradient-to-b from-slate-800 to-transparent -translate-x-1/2"></div>
             </div>
             <div class="flex-1 pt-1">
               <div class="flex items-center justify-between mb-1">
-                <span class="font-display text-lg tracking-wide text-slate-500">WEBSITE AGENT</span>
-                <span class="status-badge text-slate-600 bg-slate-800 px-2 py-1 rounded">STANDBY</span>
+                <span class="font-display text-lg tracking-wide text-slate-500">CONTENT AGENT</span>
+                <span id="agent-content-status" class="status-badge text-slate-600 bg-slate-800 px-2 py-1 rounded">STANDBY</span>
               </div>
-              <p class="font-mono text-xs text-slate-600">Awaiting video generation</p>
+              <p id="agent-content-desc" class="font-mono text-xs text-slate-600">Creates video prompt and marketing copy</p>
             </div>
+          </div>
+
+          <!-- Video Agent -->
+          <div id="agent-video-row" class="flex items-start gap-4 opacity-50">
+            <div class="relative">
+              <div id="agent-video-icon" class="w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+              </div>
+            </div>
+            <div class="flex-1 pt-1">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-display text-lg tracking-wide text-slate-500">VIDEO AGENT</span>
+                <span id="agent-video-status" class="status-badge text-slate-600 bg-slate-800 px-2 py-1 rounded">STANDBY</span>
+              </div>
+              <p id="agent-video-desc" class="font-mono text-xs text-slate-600">Generates video using FreePik AI</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Logs -->
+        <div class="px-6 pb-4">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-2 h-2 rounded-full bg-accent-red animate-blink"></div>
+            <span class="font-mono text-xs text-slate-500 tracking-wider">LIVE_FEED</span>
+          </div>
+          <div id="logs-container" class="bg-dark/50 rounded border border-slate-800 p-3 h-32 overflow-y-auto font-mono text-xs">
+            <div class="text-slate-600">Waiting for job to start...</div>
           </div>
         </div>
 
@@ -975,6 +953,7 @@
 
         <!-- Links -->
         <div class="flex items-center gap-8">
+          <a href="/video-showcase.html" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">SHOWCASE</a>
           <a href="#" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">DOCS</a>
           <a href="#" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">GITHUB</a>
           <a href="#" class="font-mono text-xs text-slate-500 hover:text-white transition-colors tracking-wider">API</a>
@@ -1004,6 +983,9 @@
     const API_BASE = '/api';
     let currentJobId = null;
     let pollInterval = null;
+    let jobStartTime = null;
+    let elapsedInterval = null;
+    let lastLogCount = 0;
 
     // DOM elements
     const urlInput = document.getElementById('url-input');
@@ -1018,13 +1000,31 @@
     const productBrand = document.getElementById('product-brand');
     const productFeatures = document.getElementById('product-features');
     const videoPrompt = document.getElementById('video-prompt');
+    const logsContainer = document.getElementById('logs-container');
+    const statusIndicator = document.getElementById('status-indicator');
+    const elapsedTimeEl = document.getElementById('elapsed-time');
+    const headerProgress = document.getElementById('header-progress');
 
-    // Agent status elements
-    const agentStatuses = {
-      research: document.getElementById('agent-research-status'),
-      content: document.getElementById('agent-content-status'),
-      video: document.getElementById('agent-video-status'),
-      website: document.getElementById('agent-website-status'),
+    // Agent elements
+    const agentElements = {
+      research: {
+        row: document.getElementById('agent-research-row'),
+        icon: document.getElementById('agent-research-icon'),
+        status: document.getElementById('agent-research-status'),
+        desc: document.getElementById('agent-research-desc'),
+      },
+      content: {
+        row: document.getElementById('agent-content-row'),
+        icon: document.getElementById('agent-content-icon'),
+        status: document.getElementById('agent-content-status'),
+        desc: document.getElementById('agent-content-desc'),
+      },
+      video: {
+        row: document.getElementById('agent-video-row'),
+        icon: document.getElementById('agent-video-icon'),
+        status: document.getElementById('agent-video-status'),
+        desc: document.getElementById('agent-video-desc'),
+      },
     };
 
     // Event listeners
@@ -1060,9 +1060,12 @@
 
         const data = await response.json();
         currentJobId = data.job_id;
+        jobStartTime = Date.now();
+        lastLogCount = 0;
 
         showStatus('Job started, monitoring progress...', 'info');
         resetUI();
+        startElapsedTimer();
         startPolling();
 
         // Scroll to System Status section
@@ -1072,6 +1075,16 @@
         showStatus(error.message, 'error');
         resetButton();
       }
+    }
+
+    function startElapsedTimer() {
+      if (elapsedInterval) clearInterval(elapsedInterval);
+      elapsedInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - jobStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const secs = (elapsed % 60).toString().padStart(2, '0');
+        elapsedTimeEl.textContent = `ELAPSED: ${mins}:${secs}`;
+      }, 1000);
     }
 
     function startPolling() {
@@ -1087,6 +1100,7 @@
 
           if (status.stage === 'completed') {
             clearInterval(pollInterval);
+            clearInterval(elapsedInterval);
             if (status.video_path) {
               showStatus('Video generation complete!', 'success');
               showVideoPreview();
@@ -1096,25 +1110,46 @@
             resetButton();
           } else if (status.stage === 'failed') {
             clearInterval(pollInterval);
+            clearInterval(elapsedInterval);
             showStatus(`Error: ${status.error}`, 'error');
             resetButton();
           }
         } catch (error) {
           console.error('Polling error:', error);
         }
-      }, 2000);
+      }, 1000);
     }
 
     function updateUI(status) {
       // Update progress bar
       progressBar.style.width = `${status.progress_percent}%`;
       progressPercent.textContent = `${status.progress_percent}%`;
+      headerProgress.textContent = `${status.progress_percent}% COMPLETE`;
+      headerProgress.className = 'font-mono text-xs text-primary';
+
+      // Update status indicator
+      if (status.stage === 'completed') {
+        statusIndicator.className = 'w-2 h-2 rounded-full bg-secondary indicator-on text-secondary';
+      } else if (status.stage === 'failed') {
+        statusIndicator.className = 'w-2 h-2 rounded-full bg-accent-red indicator-on text-accent-red';
+      } else {
+        statusIndicator.className = 'w-2 h-2 rounded-full bg-primary animate-pulse-glow text-primary';
+      }
 
       // Update status message
       showStatus(status.message, 'info');
 
-      // Update agent statuses based on stage
-      updateAgentStatuses(status.stage);
+      // Update agent statuses from API data
+      if (status.agents) {
+        updateAgentStatus('research', status.agents.research);
+        updateAgentStatus('content', status.agents.content);
+        updateAgentStatus('video', status.agents.video);
+      }
+
+      // Update logs
+      if (status.logs && status.logs.length > 0) {
+        updateLogs(status.logs);
+      }
 
       // Update product metadata if available
       if (status.product) {
@@ -1136,50 +1171,86 @@
       }
     }
 
-    function updateAgentStatuses(stage) {
-      // Reset all to standby
-      Object.values(agentStatuses).forEach(el => {
-        el.textContent = 'STANDBY';
-        el.className = 'status-badge text-slate-500 bg-slate-500/10 px-2 py-1 rounded';
-      });
+    function updateAgentStatus(agentName, status) {
+      const el = agentElements[agentName];
+      if (!el) return;
 
-      // Set statuses based on current stage
-      switch (stage) {
-        case 'queued':
-          agentStatuses.research.textContent = 'QUEUED';
-          agentStatuses.research.className = 'status-badge text-amber-400 bg-amber-400/10 px-2 py-1 rounded';
+      // Update row opacity
+      el.row.className = status === 'standby'
+        ? 'flex items-start gap-4 opacity-50'
+        : 'flex items-start gap-4';
+
+      // Update status badge
+      const statusText = status.toUpperCase();
+      el.status.textContent = statusText;
+
+      // Update icon and status styling based on state
+      switch (status) {
+        case 'active':
+          el.status.className = 'status-badge text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded animate-pulse';
+          el.icon.className = 'w-10 h-10 rounded bg-cyan-400/20 border border-cyan-400/30 flex items-center justify-center animate-border-pulse';
+          el.icon.innerHTML = `<svg class="w-5 h-5 text-cyan-400 animate-rotate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>`;
           break;
-        case 'extracting_metadata':
-          agentStatuses.research.textContent = 'ACTIVE';
-          agentStatuses.research.className = 'status-badge text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded animate-pulse';
-          agentStatuses.content.textContent = 'QUEUED';
-          agentStatuses.content.className = 'status-badge text-amber-400 bg-amber-400/10 px-2 py-1 rounded';
+        case 'done':
+          el.status.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
+          el.icon.className = 'w-10 h-10 rounded bg-secondary/20 border border-secondary/30 flex items-center justify-center';
+          el.icon.innerHTML = `<svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>`;
           break;
-        case 'generating_prompt':
-          agentStatuses.research.textContent = 'DONE';
-          agentStatuses.research.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
-          agentStatuses.content.textContent = 'ACTIVE';
-          agentStatuses.content.className = 'status-badge text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded animate-pulse';
-          agentStatuses.video.textContent = 'QUEUED';
-          agentStatuses.video.className = 'status-badge text-amber-400 bg-amber-400/10 px-2 py-1 rounded';
+        case 'failed':
+          el.status.className = 'status-badge text-accent-red bg-accent-red/10 px-2 py-1 rounded';
+          el.icon.className = 'w-10 h-10 rounded bg-accent-red/20 border border-accent-red/30 flex items-center justify-center';
+          el.icon.innerHTML = `<svg class="w-5 h-5 text-accent-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>`;
           break;
-        case 'generating_video':
-          agentStatuses.research.textContent = 'DONE';
-          agentStatuses.research.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
-          agentStatuses.content.textContent = 'DONE';
-          agentStatuses.content.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
-          agentStatuses.video.textContent = 'PROCESSING';
-          agentStatuses.video.className = 'status-badge text-primary bg-primary/10 px-2 py-1 rounded animate-blink';
-          break;
-        case 'completed':
-          agentStatuses.research.textContent = 'DONE';
-          agentStatuses.research.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
-          agentStatuses.content.textContent = 'DONE';
-          agentStatuses.content.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
-          agentStatuses.video.textContent = 'DONE';
-          agentStatuses.video.className = 'status-badge text-secondary bg-secondary/10 px-2 py-1 rounded';
+        default: // standby
+          el.status.className = 'status-badge text-slate-600 bg-slate-800 px-2 py-1 rounded';
+          el.icon.className = 'w-10 h-10 rounded bg-slate-800 border border-slate-700 flex items-center justify-center';
+          // Keep original icon for standby state
           break;
       }
+
+      // Update the title text color based on state
+      const titleEl = el.row.querySelector('.font-display');
+      if (titleEl) {
+        titleEl.className = status === 'standby'
+          ? 'font-display text-lg tracking-wide text-slate-500'
+          : 'font-display text-lg tracking-wide text-white';
+      }
+    }
+
+    function updateLogs(logs) {
+      // Only update if there are new logs
+      if (logs.length === lastLogCount) return;
+      lastLogCount = logs.length;
+
+      // Color mapping for log sources
+      const sourceColors = {
+        'TinyFish': 'text-cyan-400',
+        'FreePik': 'text-primary',
+        'Veo3': 'text-amber-400',
+        'Agent': 'text-secondary',
+        'System': 'text-slate-400',
+      };
+
+      const logsHtml = logs.map(log => {
+        const color = sourceColors[log.source] || 'text-slate-400';
+        const time = new Date(log.timestamp).toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        return `<div class="mb-1"><span class="text-slate-600">[${time}]</span> <span class="${color}">[${log.source}]</span> <span class="text-slate-300">${log.message}</span></div>`;
+      }).join('');
+
+      logsContainer.innerHTML = logsHtml;
+      // Auto-scroll to bottom
+      logsContainer.scrollTop = logsContainer.scrollHeight;
     }
 
     function showVideoPreview() {
@@ -1212,10 +1283,19 @@
     function resetUI() {
       progressBar.style.width = '0%';
       progressPercent.textContent = '0%';
+      headerProgress.textContent = 'STARTING...';
+      headerProgress.className = 'font-mono text-xs text-amber-400';
       productName.textContent = 'Loading...';
       productBrand.textContent = '-';
       productFeatures.innerHTML = '<span class="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-slate-500 text-xs font-mono">loading...</span>';
       videoPrompt.textContent = '-';
+      logsContainer.innerHTML = '<div class="text-slate-600">Starting job...</div>';
+      lastLogCount = 0;
+
+      // Reset agent statuses
+      ['research', 'content', 'video'].forEach(agent => {
+        updateAgentStatus(agent, 'standby');
+      });
 
       // Reset video preview
       const existingVideo = videoPreview.querySelector('video');

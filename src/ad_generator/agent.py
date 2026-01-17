@@ -87,6 +87,7 @@ class AdGeneratorAgent:
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
         on_tool_result: Optional[Callable[[str, dict, Any], None]] = None,
+        on_log: Optional[Callable[[str, str], None]] = None,
     ):
         """
         Initialize the ad generator agent.
@@ -101,6 +102,7 @@ class AdGeneratorAgent:
             aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
             on_tool_call: Callback for tool call notifications (tool_name, args)
             on_tool_result: Callback for tool result notifications (tool_name, args, result)
+            on_log: Callback for log messages (source, message)
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
@@ -111,6 +113,7 @@ class AdGeneratorAgent:
         self.aspect_ratio = aspect_ratio
         self.on_tool_call = on_tool_call
         self.on_tool_result = on_tool_result
+        self.on_log = on_log
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
@@ -136,9 +139,15 @@ class AdGeneratorAgent:
         async def get_product_metadata(args: dict[str, Any]) -> dict:
             """Fetch product metadata from URL."""
             self._log_tool_call("get_product_metadata", args)
+
+            # Create a progress callback that forwards to on_log
+            def on_progress(message: str) -> None:
+                if self.on_log:
+                    self.on_log("TinyFish", message)
+
             try:
                 url = args["url"]
-                metadata = await extract_product_metadata(url)
+                metadata = await extract_product_metadata(url, on_progress=on_progress)
                 self._product_metadata = metadata
                 # Notify about the result with product data
                 self._log_tool_result("get_product_metadata", args, metadata.model_dump())
@@ -193,24 +202,36 @@ class AdGeneratorAgent:
                 # Generate with FreePik (WAN 2.6)
                 try:
                     print("\n[FreePik WAN 2.6] Submitting video generation request...")
+                    if self.on_log:
+                        self.on_log("FreePik", "Submitting video generation request...")
                     result = await self._generate_freepik(prompt)
                     results.append(result)
                     print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
+                    if self.on_log:
+                        self.on_log("FreePik", f"Video generated successfully")
                 except FreePikError as e:
                     errors.append(f"FreePik: {e}")
                     print(f"[FreePik WAN 2.6] Error: {e}")
+                    if self.on_log:
+                        self.on_log("FreePik", f"Error: {e}")
 
                 # Generate with Kie.ai (Veo 3) if enabled
                 if self.use_veo3:
                     mode = "Quality" if self.veo3_quality else "Fast"
                     try:
                         print(f"\n[Kie.ai Veo 3 {mode}] Submitting video generation request...")
+                        if self.on_log:
+                            self.on_log("Veo3", f"Submitting video generation request ({mode} mode)...")
                         result = await self._generate_kie(prompt)
                         results.append(result)
                         print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
+                        if self.on_log:
+                            self.on_log("Veo3", f"Video generated successfully")
                     except KieAIError as e:
                         errors.append(f"Kie.ai: {e}")
                         print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
+                        if self.on_log:
+                            self.on_log("Veo3", f"Error: {e}")
 
                 self._video_results = results
 
