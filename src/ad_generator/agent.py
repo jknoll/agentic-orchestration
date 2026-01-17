@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 from claude_agent_sdk import (
     ClaudeAgentOptions,
     ClaudeSDKClient,
@@ -82,6 +86,7 @@ class AdGeneratorAgent:
         resolution: VideoResolution = VideoResolution.HD_720P,
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
+        on_tool_result: Optional[Callable[[str, dict, Any], None]] = None,
     ):
         """
         Initialize the ad generator agent.
@@ -95,6 +100,7 @@ class AdGeneratorAgent:
             resolution: Video resolution (720p or 1080p)
             aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
             on_tool_call: Callback for tool call notifications (tool_name, args)
+            on_tool_result: Callback for tool result notifications (tool_name, args, result)
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
@@ -104,6 +110,7 @@ class AdGeneratorAgent:
         self.resolution = resolution
         self.aspect_ratio = aspect_ratio
         self.on_tool_call = on_tool_call
+        self.on_tool_result = on_tool_result
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
@@ -112,6 +119,11 @@ class AdGeneratorAgent:
         """Log a tool call with its arguments."""
         if self.on_tool_call:
             self.on_tool_call(tool_name, args)
+
+    def _log_tool_result(self, tool_name: str, args: dict, result: Any):
+        """Log a tool result."""
+        if self.on_tool_result:
+            self.on_tool_result(tool_name, args, result)
 
     def _create_tools(self):
         """Create MCP tools for the agent."""
@@ -128,6 +140,8 @@ class AdGeneratorAgent:
                 url = args["url"]
                 metadata = await extract_product_metadata(url)
                 self._product_metadata = metadata
+                # Notify about the result with product data
+                self._log_tool_result("get_product_metadata", args, metadata.model_dump())
                 return {
                     "content": [
                         {
@@ -154,6 +168,8 @@ class AdGeneratorAgent:
                     price=None,
                     brand=parsed.netloc.replace("www.", "").split(".")[0].title(),
                 )
+                # Notify about the fallback result
+                self._log_tool_result("get_product_metadata", args, self._product_metadata.model_dump())
                 return {
                     "content": [{"type": "text", "text": f"Error fetching metadata: {e}. Using fallback data from URL: {product_name}"}],
                     "isError": True,
