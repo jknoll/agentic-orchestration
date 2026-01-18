@@ -3,7 +3,7 @@
 import asyncio
 import json
 import os
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 from urllib.parse import urljoin
 
 import httpx
@@ -12,13 +12,23 @@ from bs4 import BeautifulSoup
 from .models import ProductMetadata
 from .tinyfish_client import TinyFishClient, TinyFishError
 
+# Type alias for progress callback
+ProgressCallback = Callable[[str], None]
 
-async def extract_product_metadata(url: str) -> ProductMetadata:
+
+async def extract_product_metadata(
+    url: str,
+    on_progress: Optional[ProgressCallback] = None,
+) -> ProductMetadata:
     """
     Extract product metadata from a URL using multiple strategies.
 
     Runs both TinyFish AI extraction and HTML parsing, then merges results.
     TinyFish data is preferred when available.
+
+    Args:
+        url: The product page URL
+        on_progress: Optional callback for progress updates
     """
     # Start HTML extraction
     html_task = asyncio.create_task(_extract_via_html(url))
@@ -28,12 +38,18 @@ async def extract_product_metadata(url: str) -> ProductMetadata:
     if os.environ.get("MINO_API_KEY"):
         try:
             print("[TinyFish] Starting AI-powered metadata extraction...")
-            tinyfish_data = await _extract_via_tinyfish(url)
+            if on_progress:
+                on_progress("Starting AI-powered metadata extraction...")
+            tinyfish_data = await _extract_via_tinyfish(url, on_progress)
             print("[TinyFish] Extraction complete")
         except TinyFishError as e:
             print(f"[TinyFish] Extraction failed: {e}")
+            if on_progress:
+                on_progress(f"Extraction failed: {e}")
         except Exception as e:
             print(f"[TinyFish] Unexpected error: {e}")
+            if on_progress:
+                on_progress(f"Unexpected error: {e}")
 
     # Wait for HTML extraction
     html_metadata = await html_task
@@ -42,10 +58,13 @@ async def extract_product_metadata(url: str) -> ProductMetadata:
     return _merge_metadata(html_metadata, tinyfish_data, url)
 
 
-async def _extract_via_tinyfish(url: str) -> Optional[dict]:
+async def _extract_via_tinyfish(
+    url: str,
+    on_progress: Optional[ProgressCallback] = None,
+) -> Optional[dict]:
     """Extract metadata using TinyFish AI."""
     async with TinyFishClient() as client:
-        return await client.extract_product_metadata(url)
+        return await client.extract_product_metadata(url, on_progress=on_progress)
 
 
 async def _extract_via_html(url: str) -> ProductMetadata:

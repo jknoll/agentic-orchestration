@@ -6,6 +6,10 @@ import os
 from pathlib import Path
 from typing import Optional
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 import httpx
 
 from .models import (

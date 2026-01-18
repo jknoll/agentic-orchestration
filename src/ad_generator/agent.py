@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 from claude_agent_sdk import (
     ClaudeAgentOptions,
     ClaudeSDKClient,
@@ -55,6 +59,8 @@ class AdGeneratorAgent:
         presenter: bool = False,
         multi_shot: bool = False,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
+        on_tool_result: Optional[Callable[[str, dict, Any], None]] = None,
+        on_log: Optional[Callable[[str, str], None]] = None,
     ):
         """
         Initialize the ad generator agent.
@@ -71,6 +77,8 @@ class AdGeneratorAgent:
             presenter: Include on-camera human presenter in the video
             multi_shot: Force multi-shot mode with scene transitions (FreePik only)
             on_tool_call: Callback for tool call notifications (tool_name, args)
+            on_tool_result: Callback for tool result notifications (tool_name, args, result)
+            on_log: Callback for log messages (source, message)
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
@@ -83,6 +91,8 @@ class AdGeneratorAgent:
         self.presenter = presenter
         self.multi_shot = multi_shot
         self.on_tool_call = on_tool_call
+        self.on_tool_result = on_tool_result
+        self.on_log = on_log
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
@@ -92,6 +102,11 @@ class AdGeneratorAgent:
         """Log a tool call with its arguments."""
         if self.on_tool_call:
             self.on_tool_call(tool_name, args)
+
+    def _log_tool_result(self, tool_name: str, args: dict, result: Any):
+        """Log a tool result."""
+        if self.on_tool_result:
+            self.on_tool_result(tool_name, args, result)
 
     def _create_tools(self):
         """Create MCP tools for the agent."""
@@ -104,10 +119,18 @@ class AdGeneratorAgent:
         async def get_product_metadata(args: dict[str, Any]) -> dict:
             """Fetch product metadata from URL."""
             self._log_tool_call("get_product_metadata", args)
+
+            # Create a progress callback that forwards to on_log
+            def on_progress(message: str) -> None:
+                if self.on_log:
+                    self.on_log("TinyFish", message)
+
             try:
                 url = args["url"]
-                metadata = await extract_product_metadata(url)
+                metadata = await extract_product_metadata(url, on_progress=on_progress)
                 self._product_metadata = metadata
+                # Notify about the result with product data
+                self._log_tool_result("get_product_metadata", args, metadata.model_dump())
                 return {
                     "content": [
                         {
@@ -134,6 +157,8 @@ class AdGeneratorAgent:
                     price=None,
                     brand=parsed.netloc.replace("www.", "").split(".")[0].title(),
                 )
+                # Notify about the fallback result
+                self._log_tool_result("get_product_metadata", args, self._product_metadata.model_dump())
                 return {
                     "content": [{"type": "text", "text": f"Error fetching metadata: {e}. Using fallback data from URL: {product_name}"}],
                     "isError": True,
@@ -176,18 +201,26 @@ class AdGeneratorAgent:
                     result = await self._generate_freepik(prompt, shot_type)
                     results.append(result)
                     print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
+                    if self.on_log:
+                        self.on_log("FreePik", f"Video generated successfully")
                 except FreePikError as e:
                     errors.append(f"FreePik: {e}")
                     print(f"[FreePik WAN 2.6] Error: {e}")
+                    if self.on_log:
+                        self.on_log("FreePik", f"Error: {e}")
 
                 # Generate with Kie.ai (Veo 3) if enabled
                 if self.use_veo3:
                     mode = "Quality" if self.veo3_quality else "Fast"
                     try:
                         print(f"\n[Kie.ai Veo 3 {mode}] Submitting video generation request...")
+                        if self.on_log:
+                            self.on_log("Veo3", f"Submitting video generation request ({mode} mode)...")
                         result = await self._generate_kie(prompt)
                         results.append(result)
                         print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
+                        if self.on_log:
+                            self.on_log("Veo3", f"Video generated successfully")
                     except KieAIError as e:
                         error_str = str(e)
                         errors.append(f"Kie.ai: {error_str}")

@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 import httpx
 
@@ -13,6 +13,10 @@ class TinyFishError(Exception):
     def __init__(self, message: str, status_code: Optional[int] = None):
         super().__init__(message)
         self.status_code = status_code
+
+
+# Type alias for progress callback
+ProgressCallback = Callable[[str], None]
 
 
 # Goal prompt for product metadata extraction
@@ -60,12 +64,17 @@ class TinyFishClient:
         if self._client:
             await self._client.aclose()
 
-    async def extract_product_metadata(self, url: str) -> dict:
+    async def extract_product_metadata(
+        self,
+        url: str,
+        on_progress: Optional[ProgressCallback] = None,
+    ) -> dict:
         """
         Extract product metadata from a URL using TinyFish AI.
 
         Args:
             url: The product page URL to extract metadata from
+            on_progress: Optional callback for progress updates
 
         Returns:
             Dictionary with extracted product metadata
@@ -110,9 +119,14 @@ class TinyFishClient:
                             if event_type == "PROGRESS":
                                 purpose = event_data.get("purpose", "")
                                 print(f"[TinyFish] {purpose}")
+                                # Call the progress callback if provided
+                                if on_progress and purpose:
+                                    on_progress(purpose)
 
                             elif event_type == "COMPLETE":
                                 result_data = event_data.get("resultJson")
+                                if on_progress:
+                                    on_progress("Extraction complete")
                                 break
 
                             elif event_type == "ERROR":
