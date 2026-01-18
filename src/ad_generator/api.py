@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .agent import AdGeneratorAgent
@@ -47,6 +46,8 @@ class GenerateRequest(BaseModel):
     duration: int = 8
     resolution: str = "720p"
     aspect_ratio: str = "16:9"
+    voice_over: bool = False
+    presenter: bool = False
 
 
 class JobInfo(BaseModel):
@@ -115,6 +116,8 @@ async def run_generation(job_id: str, request: GenerateRequest):
             duration=duration,
             resolution=resolution,
             aspect_ratio=aspect_ratio,
+            voice_over=request.voice_over,
+            presenter=request.presenter,
             on_tool_call=on_tool_call,
         )
 
@@ -216,5 +219,8 @@ async def serve_video(job_id: str, filename: str):
     )
 
 
-# Mount static files for index.html (must be last)
-app.mount("/", StaticFiles(directory=str(PROJECT_ROOT), html=True), name="static")
+# Serve index.html at root
+@app.get("/")
+async def serve_index():
+    """Serve the index.html file."""
+    return FileResponse(PROJECT_ROOT / "index.html")

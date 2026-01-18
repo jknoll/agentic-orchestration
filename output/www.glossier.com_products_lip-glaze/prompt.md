@@ -1,0 +1,1 @@
+Young woman in soft natural lighting touches her lips, looking frustrated. She smiles, holds up Glossier Lip Glaze tube, applies it smoothly. Close-up of glossy, hydrated lips with sheer color. She says confidently: "Finally, 12-hour hydration without the stick." Bright, airy aesthetic with warm golden tones. Camera pulls back as she smiles radiantly.
