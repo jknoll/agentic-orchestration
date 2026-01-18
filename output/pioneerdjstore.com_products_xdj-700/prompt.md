@@ -1,0 +1,1 @@
+Cinematic close-up of DJ fingers touching a glowing 7-inch touchscreen, neon lights reflecting off Pioneer XDJ-700. Quick cut to spinning jog wheel in slow motion. Camera pulls back revealing confident DJ in moody club booth, purple and blue lighting, crowd silhouettes pulsing to the beat. Text overlay: "Club Power. Compact Size." Dramatic, aspirational mood.

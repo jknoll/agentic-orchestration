@@ -25,17 +25,19 @@ def _parse_error_response(response: httpx.Response) -> str:
     try:
         data = response.json()
         if isinstance(data, dict):
-            if "msg" in data:
-                return data["msg"]
-            if "message" in data:
-                return data["message"]
+            msg = data.get("msg") or data.get("message") or ""
+            # Check for credit-related errors in the message
+            if _is_credit_error(msg) or _is_credit_error(str(data)):
+                return "Insufficient credits - please add more credits to your Kie.ai account at https://kie.ai"
+            if msg:
+                return msg
     except Exception:
         pass
 
     status_messages = {
         400: "Bad request - invalid parameters",
         401: "Invalid API key - check your KIE_API_KEY",
-        402: "Insufficient credits - please add more credits to your Kie.ai account",
+        402: "Insufficient credits - please add more credits to your Kie.ai account at https://kie.ai",
         403: "Access forbidden - check your API key permissions",
         429: "Rate limit exceeded - please wait before retrying",
         500: "Kie.ai server error - please try again later",
@@ -49,6 +51,29 @@ def _parse_error_response(response: httpx.Response) -> str:
         return f"API error ({status_code}): {text[:200]}"
 
     return f"API error ({status_code})"
+
+
+def _is_credit_error(text: str) -> bool:
+    """Check if an error message indicates insufficient credits."""
+    if not text:
+        return False
+    text_lower = text.lower()
+    credit_indicators = [
+        "insufficient",
+        "credit",
+        "balance",
+        "quota",
+        "limit exceeded",
+        "no remaining",
+        "payment",
+        "subscription",
+        "top up",
+        "recharge",
+        "out of",
+        "run out",
+        "exhausted",
+    ]
+    return any(indicator in text_lower for indicator in credit_indicators)
 
 
 class KieAIClient:
@@ -123,13 +148,25 @@ class KieAIClient:
             response.raise_for_status()
             data = response.json()
 
-            if data.get("code") != 200:
-                error_msg = data.get("msg", "Unknown error")
-                raise KieAIError(f"API error: {error_msg}", status_code=data.get("code"))
+            # Check for error codes in response body
+            response_code = data.get("code")
+            error_msg = data.get("msg", "")
+
+            # Check for credit-related errors
+            if _is_credit_error(error_msg) or _is_credit_error(str(data)):
+                raise KieAIError(
+                    "Insufficient credits - please add more credits to your Kie.ai account at https://kie.ai",
+                    status_code=402,
+                )
+
+            if response_code != 200:
+                if not error_msg:
+                    error_msg = "Unknown error"
+                raise KieAIError(f"API error: {error_msg}", status_code=response_code)
 
             task_id = data.get("data", {}).get("taskId")
             if not task_id:
-                raise KieAIError("No taskId in response")
+                raise KieAIError("No taskId in response - possible API error")
 
             return VideoGenerationResult(
                 task_id=task_id,
@@ -160,8 +197,17 @@ class KieAIClient:
             response.raise_for_status()
             data = response.json()
 
+            # Check for credit-related errors
+            error_msg = data.get("msg", "")
+            if _is_credit_error(error_msg) or _is_credit_error(str(data)):
+                raise KieAIError(
+                    "Insufficient credits - please add more credits to your Kie.ai account at https://kie.ai",
+                    status_code=402,
+                )
+
             if data.get("code") != 200:
-                error_msg = data.get("msg", "Unknown error")
+                if not error_msg:
+                    error_msg = "Unknown error"
                 raise KieAIError(f"API error: {error_msg}")
 
             task_data = data.get("data", {})

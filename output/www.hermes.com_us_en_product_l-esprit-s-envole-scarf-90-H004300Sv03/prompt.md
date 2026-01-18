@@ -1,0 +1,1 @@
+Golden hour sunlight streams through sheer curtains as a silk Hermès scarf floats gracefully through the air in slow motion, its vibrant colors catching the light. Camera follows as elegant hands catch the scarf, wrapping it artfully. Close-up reveals intricate patterns. Soft, dreamy atmosphere with warm bokeh. Text: "L'Esprit s'Envole" then "Hermès"

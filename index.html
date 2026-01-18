@@ -345,14 +345,15 @@
               <span class="font-mono text-xs text-slate-600">URL</span>
             </div>
             <input
+              id="url-input"
               type="url"
               placeholder="https://amazon.com/product/example"
               class="w-full pl-16 pr-4 py-4 bg-dark/80 border border-slate-700/50 text-white placeholder-slate-600 font-mono text-sm focus:outline-none focus:border-primary transition-colors rounded"
             >
             <div class="absolute inset-0 rounded pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" style="box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);"></div>
           </div>
-          <button class="relative px-8 py-4 bg-primary font-display text-xl tracking-wider text-white rounded overflow-hidden group hover:bg-primary/90 transition-colors">
-            <span class="relative z-10 flex items-center gap-3">
+          <button id="generate-btn" class="relative px-8 py-4 bg-primary font-display text-xl tracking-wider text-white rounded overflow-hidden group hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="generate-btn-text" class="relative z-10 flex items-center gap-3">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z"/>
               </svg>
@@ -576,8 +577,12 @@
             </div>
 
             <!-- Video area -->
-            <div class="aspect-video bg-dark relative scanlines">
-              <div class="absolute inset-0 flex items-center justify-center">
+            <div id="video-container" class="aspect-video bg-dark relative scanlines">
+              <!-- Video element (hidden until loaded) -->
+              <video id="preview-video" class="absolute inset-0 w-full h-full object-cover hidden" controls></video>
+
+              <!-- Placeholder (shown when no video) -->
+              <div id="video-placeholder" class="absolute inset-0 flex items-center justify-center">
                 <!-- Play button -->
                 <div class="relative group cursor-pointer">
                   <div class="w-24 h-24 rounded-full border-2 border-white/20 flex items-center justify-center group-hover:border-white/40 transition-colors">
@@ -592,15 +597,15 @@
               </div>
 
               <!-- Corner decorations -->
-              <div class="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-white/20"></div>
-              <div class="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-white/20"></div>
-              <div class="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-white/20"></div>
-              <div class="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-white/20"></div>
+              <div class="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-white/20 pointer-events-none"></div>
+              <div class="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-white/20 pointer-events-none"></div>
+              <div class="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-white/20 pointer-events-none"></div>
+              <div class="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-white/20 pointer-events-none"></div>
 
               <!-- Video info overlay -->
-              <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark to-transparent">
-                <p class="font-display text-xl text-white">SOUNDMAX PRO</p>
-                <p class="font-mono text-xs text-slate-400">AI-Generated Video Ad // 00:15</p>
+              <div id="video-info" class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-dark to-transparent pointer-events-none">
+                <p id="video-title" class="font-display text-xl text-white">AWAITING INPUT</p>
+                <p id="video-subtitle" class="font-mono text-xs text-slate-400">Enter a product URL to generate</p>
               </div>
             </div>
 
@@ -642,33 +647,36 @@
             <div class="p-4 space-y-4">
               <div class="bg-dark/50 rounded p-3 border border-slate-800/50">
                 <p class="font-mono text-xs text-slate-600 mb-1">PRODUCT_NAME</p>
-                <p class="text-white text-sm">SoundMax Pro Wireless Headphones</p>
+                <p id="product-name" class="text-white text-sm">Awaiting generation...</p>
               </div>
 
               <div class="bg-dark/50 rounded p-3 border border-slate-800/50">
-                <p class="font-mono text-xs text-slate-600 mb-1">TARGET_AUDIENCE</p>
-                <p class="text-white text-sm">Tech professionals, 25-45, remote workers</p>
+                <p class="font-mono text-xs text-slate-600 mb-1">BRAND</p>
+                <p id="product-brand" class="text-white text-sm">—</p>
+              </div>
+
+              <div class="bg-dark/50 rounded p-3 border border-slate-800/50">
+                <p class="font-mono text-xs text-slate-600 mb-1">PRICE</p>
+                <p id="product-price" class="text-white text-sm">—</p>
               </div>
 
               <div class="bg-dark/50 rounded p-3 border border-slate-800/50">
                 <p class="font-mono text-xs text-slate-600 mb-2">KEY_FEATURES</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-primary text-xs font-mono">40hr_battery</span>
-                  <span class="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-primary text-xs font-mono">ANC</span>
-                  <span class="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-primary text-xs font-mono">hi_res</span>
+                <div id="product-features" class="flex flex-wrap gap-2">
+                  <span class="text-slate-500 text-xs font-mono">No features yet</span>
                 </div>
               </div>
 
               <div class="bg-dark/50 rounded p-3 border border-slate-800/50">
-                <p class="font-mono text-xs text-slate-600 mb-1">SUGGESTED_CTA</p>
-                <p class="text-secondary text-sm font-medium">"Experience Sound Without Limits"</p>
+                <p class="font-mono text-xs text-slate-600 mb-1">STATUS</p>
+                <p id="job-status" class="text-slate-400 text-sm font-medium">Ready to generate</p>
               </div>
 
-              <button class="w-full mt-4 py-3 border border-slate-700 rounded font-mono text-xs text-slate-400 hover:text-white hover:border-primary transition-colors flex items-center justify-center gap-2">
-                <span>VIEW LANDING PAGE</span>
+              <button id="download-btn" class="w-full mt-4 py-3 border border-slate-700 rounded font-mono text-xs text-slate-400 hover:text-white hover:border-primary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
+                <span>DOWNLOAD VIDEO</span>
               </button>
             </div>
           </div>
@@ -998,6 +1006,159 @@
       </div>
     </div>
   </footer>
+
+  <!-- JavaScript for API Integration -->
+  <script>
+    // Elements
+    const urlInput = document.getElementById('url-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const generateBtnText = document.getElementById('generate-btn-text');
+    const previewVideo = document.getElementById('preview-video');
+    const videoPlaceholder = document.getElementById('video-placeholder');
+    const videoTitle = document.getElementById('video-title');
+    const videoSubtitle = document.getElementById('video-subtitle');
+    const productName = document.getElementById('product-name');
+    const productBrand = document.getElementById('product-brand');
+    const productPrice = document.getElementById('product-price');
+    const productFeatures = document.getElementById('product-features');
+    const jobStatus = document.getElementById('job-status');
+    const downloadBtn = document.getElementById('download-btn');
+
+    let currentJobId = null;
+    let pollInterval = null;
+
+    // Start generation
+    async function startGeneration() {
+      const url = urlInput.value.trim();
+      if (!url) {
+        alert('Please enter a product URL');
+        return;
+      }
+
+      // Update UI for loading state
+      generateBtn.disabled = true;
+      generateBtnText.innerHTML = `
+        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        GENERATING...
+      `;
+      jobStatus.textContent = 'Starting generation...';
+      jobStatus.className = 'text-primary text-sm font-medium animate-pulse';
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) throw new Error('Failed to start generation');
+
+        const data = await response.json();
+        currentJobId = data.job_id;
+
+        // Start polling for status
+        pollInterval = setInterval(pollStatus, 2000);
+        pollStatus(); // Immediate first poll
+
+      } catch (error) {
+        console.error('Error:', error);
+        jobStatus.textContent = 'Error: ' + error.message;
+        jobStatus.className = 'text-accent-red text-sm font-medium';
+        resetButton();
+      }
+    }
+
+    // Poll for job status
+    async function pollStatus() {
+      if (!currentJobId) return;
+
+      try {
+        const response = await fetch(`/api/status/${currentJobId}`);
+        if (!response.ok) throw new Error('Failed to get status');
+
+        const data = await response.json();
+        updateUI(data);
+
+        // Stop polling if complete or failed
+        if (data.status === 'complete' || data.status === 'failed') {
+          clearInterval(pollInterval);
+          pollInterval = null;
+          resetButton();
+        }
+
+      } catch (error) {
+        console.error('Poll error:', error);
+      }
+    }
+
+    // Update UI with job status
+    function updateUI(data) {
+      // Update status message
+      jobStatus.textContent = data.message || data.status;
+
+      // Update status color based on state
+      if (data.status === 'complete') {
+        jobStatus.className = 'text-secondary text-sm font-medium';
+      } else if (data.status === 'failed') {
+        jobStatus.className = 'text-accent-red text-sm font-medium';
+        if (data.error) {
+          jobStatus.textContent = 'Error: ' + data.error;
+        }
+      } else {
+        jobStatus.className = 'text-primary text-sm font-medium animate-pulse';
+      }
+
+      // Update product info if available
+      if (data.product) {
+        productName.textContent = data.product.title || '—';
+        productBrand.textContent = data.product.brand || '—';
+        productPrice.textContent = data.product.price || '—';
+
+        // Update features
+        if (data.product.features && data.product.features.length > 0) {
+          productFeatures.innerHTML = data.product.features
+            .slice(0, 5)
+            .map(f => `<span class="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-primary text-xs font-mono">${f}</span>`)
+            .join('');
+        }
+
+        // Update video title
+        videoTitle.textContent = data.product.title || 'GENERATED AD';
+      }
+
+      // Show video if complete
+      if (data.status === 'complete' && data.video_url) {
+        previewVideo.src = data.video_url;
+        previewVideo.classList.remove('hidden');
+        videoPlaceholder.classList.add('hidden');
+        videoSubtitle.textContent = 'AI-Generated Video Ad';
+
+        // Enable download button
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => window.open(data.video_url, '_blank');
+      }
+    }
+
+    // Reset generate button
+    function resetButton() {
+      generateBtn.disabled = false;
+      generateBtnText.innerHTML = `
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        GENERATE
+      `;
+    }
+
+    // Event listeners
+    generateBtn.addEventListener('click', startGeneration);
+    urlInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') startGeneration();
+    });
+  </script>
 
 </body>
 </html>

@@ -22,12 +22,14 @@ from claude_agent_sdk import (
 from .freepik_client import FreePikClient, FreePikError
 from .kie_client import KieAIClient, KieAIError
 from .metadata_extractor import extract_product_metadata
+from .system_prompt import build_system_prompt
 from .models import (
     AdScene,
     AdScript,
     AspectRatio,
     GenerationOutput,
     ProductMetadata,
+    ShotType,
     VideoDuration,
     VideoGenerationRequest,
     VideoGenerationResult,
@@ -35,38 +37,6 @@ from .models import (
     VideoResolution,
     VideoStatus,
 )
-
-
-SYSTEM_PROMPT = """You are an expert advertising copywriter and video director specializing in short-form video ads for e-commerce products.
-
-Your task is to create compelling video advertisements by:
-1. Analyzing product information to understand its key selling points
-2. Crafting a persuasive video script optimized for short attention spans
-3. Writing an effective video generation prompt that captures the essence of the ad
-
-When creating video prompts, follow these guidelines:
-- Keep it under 8 seconds total
-- Start with a hook that grabs attention in the first 2 seconds
-- Highlight the product's main benefit or unique value proposition
-- End with a clear call-to-action
-- Use vivid, cinematic descriptions for the video prompt
-- Describe camera movements, lighting, and mood
-- Focus on showing the product in an aspirational context
-- Keep the prompt under 500 characters for optimal video generation
-
-IMPORTANT: After crafting your video prompt, you MUST call the generate_video tool with your prompt. The video generation happens automatically - you just need to provide the prompt text.
-
-You have access to tools to:
-1. Fetch product metadata from a URL (get_product_metadata)
-2. Generate a video using the description you create (generate_video)
-
-Workflow:
-1. First, call get_product_metadata with the product URL
-2. Analyze the product information returned
-3. Craft a compelling video prompt (describe it in your response)
-4. Call generate_video with your crafted prompt
-
-Always use the tools provided and complete all steps."""
 
 
 # Default negative prompt to suppress text overlays
@@ -82,9 +52,12 @@ class AdGeneratorAgent:
         freepik_api_key: Optional[str] = None,
         use_veo3: bool = False,
         veo3_quality: bool = False,
-        duration: VideoDuration = VideoDuration.MEDIUM_8,
-        resolution: VideoResolution = VideoResolution.HD_720P,
+        duration: VideoDuration = VideoDuration.EXTRA_LONG_15,
+        resolution: VideoResolution = VideoResolution.FHD_1080P,
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
+        voice_over: bool = False,
+        presenter: bool = False,
+        multi_shot: bool = False,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
         on_tool_result: Optional[Callable[[str, dict, Any], None]] = None,
         on_log: Optional[Callable[[str, str], None]] = None,
@@ -100,6 +73,9 @@ class AdGeneratorAgent:
             duration: Video duration (5, 8, 10, or 15 seconds)
             resolution: Video resolution (720p or 1080p)
             aspect_ratio: Video aspect ratio (16:9 landscape or 9:16 portrait)
+            voice_over: Include voice-over narration in the video
+            presenter: Include on-camera human presenter in the video
+            multi_shot: Force multi-shot mode with scene transitions (FreePik only)
             on_tool_call: Callback for tool call notifications (tool_name, args)
             on_tool_result: Callback for tool result notifications (tool_name, args, result)
             on_log: Callback for log messages (source, message)
@@ -111,12 +87,16 @@ class AdGeneratorAgent:
         self.duration = duration
         self.resolution = resolution
         self.aspect_ratio = aspect_ratio
+        self.voice_over = voice_over
+        self.presenter = presenter
+        self.multi_shot = multi_shot
         self.on_tool_call = on_tool_call
         self.on_tool_result = on_tool_result
         self.on_log = on_log
         self._product_metadata: Optional[ProductMetadata] = None
         self._video_results: list[VideoGenerationResult] = []
         self._video_prompt: Optional[str] = None
+        self._shot_type: ShotType = ShotType.MULTI if multi_shot else ShotType.SINGLE
 
     def _log_tool_call(self, tool_name: str, args: dict):
         """Log a tool call with its arguments."""
@@ -184,11 +164,15 @@ class AdGeneratorAgent:
                     "isError": True,
                 }
 
-        @tool(
-            "generate_video",
-            "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood. Keep prompts under 500 characters.",
-            {"prompt": str},
-        )
+        # Build tool description and schema based on multi_shot mode
+        if self.multi_shot:
+            tool_desc = "Generate a multi-shot video advertisement using the provided prompt. Structure your prompt with [Shot N: description] format for each scene. Include camera angles, transitions, and visual narrative."
+            tool_schema = {"prompt": str}
+        else:
+            tool_desc = "Generate a video advertisement using the provided prompt. The prompt should describe the video scene, including visuals, camera movement, and mood. Keep prompts under 500 characters. Use shot_type='multi' for longer videos (10-15s) that need multiple scenes."
+            tool_schema = {"prompt": str, "shot_type": str}
+
+        @tool("generate_video", tool_desc, tool_schema)
         async def generate_video(args: dict[str, Any]) -> dict:
             """Generate video from prompt using configured providers."""
             self._log_tool_call("generate_video", args)
@@ -196,15 +180,25 @@ class AdGeneratorAgent:
                 prompt = args["prompt"]
                 self._video_prompt = prompt
 
+                # Determine shot type
+                if self.multi_shot:
+                    # Forced multi-shot mode
+                    shot_type = ShotType.MULTI
+                else:
+                    # Agent decides or defaults to single
+                    shot_type_str = args.get("shot_type", "single").lower()
+                    shot_type = ShotType.MULTI if shot_type_str == "multi" else ShotType.SINGLE
+
+                self._shot_type = shot_type
+
                 results = []
                 errors = []
 
                 # Generate with FreePik (WAN 2.6)
                 try:
-                    print("\n[FreePik WAN 2.6] Submitting video generation request...")
-                    if self.on_log:
-                        self.on_log("FreePik", "Submitting video generation request...")
-                    result = await self._generate_freepik(prompt)
+                    shot_mode = "multi-shot" if shot_type == ShotType.MULTI else "single-shot"
+                    print(f"\n[FreePik WAN 2.6] Submitting {shot_mode} video generation request...")
+                    result = await self._generate_freepik(prompt, shot_type)
                     results.append(result)
                     print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
                     if self.on_log:
@@ -228,10 +222,18 @@ class AdGeneratorAgent:
                         if self.on_log:
                             self.on_log("Veo3", f"Video generated successfully")
                     except KieAIError as e:
-                        errors.append(f"Kie.ai: {e}")
-                        print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
-                        if self.on_log:
-                            self.on_log("Veo3", f"Error: {e}")
+                        error_str = str(e)
+                        errors.append(f"Kie.ai: {error_str}")
+                        # Make credit errors more visible
+                        if "insufficient credits" in error_str.lower() or "credit" in error_str.lower():
+                            print(f"\n{'='*60}")
+                            print(f"[Kie.ai Veo 3 {mode}] CREDIT ERROR")
+                            print(f"{'='*60}")
+                            print(f"You have run out of Kie.ai credits.")
+                            print(f"Please add more credits at: https://kie.ai")
+                            print(f"{'='*60}\n")
+                        else:
+                            print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
 
                 self._video_results = results
 
@@ -269,7 +271,7 @@ class AdGeneratorAgent:
 
         return [get_product_metadata, generate_video]
 
-    async def _generate_freepik(self, prompt: str) -> VideoGenerationResult:
+    async def _generate_freepik(self, prompt: str, shot_type: ShotType = ShotType.SINGLE) -> VideoGenerationResult:
         """Generate video using FreePik API."""
         request = VideoGenerationRequest(
             prompt=prompt,
@@ -277,6 +279,7 @@ class AdGeneratorAgent:
             resolution=self.resolution,
             duration=self.duration,
             aspect_ratio=self.aspect_ratio,
+            shot_type=shot_type,
             with_audio=True,
         )
 
@@ -359,8 +362,16 @@ class AdGeneratorAgent:
             tools=tools,
         )
 
+        # Build system prompt based on mode flags
+        system_prompt = build_system_prompt(
+            voice_over=self.voice_over,
+            presenter=self.presenter,
+            multi_shot=self.multi_shot,
+            allow_shot_type_choice=not self.multi_shot,  # Let agent choose if not forced
+        )
+
         options = ClaudeAgentOptions(
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             mcp_servers={"ad_tools": mcp_server},
             allowed_tools=[
                 "mcp__ad_tools__get_product_metadata",
