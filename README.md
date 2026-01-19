@@ -59,6 +59,21 @@ claude
 
 ## Usage
 
+### Web Interface
+
+Start the web server to use the browser-based interface:
+
+```bash
+ad-generator-server
+```
+
+This starts a FastAPI server at http://localhost:8000 with:
+- Web UI for submitting product URLs and tracking progress
+- REST API at `/api/generate`, `/api/status/{job_id}`, `/api/jobs`
+- Video showcase at `/video-showcase.html`
+
+### CLI
+
 ```bash
 # Basic usage (FreePik WAN 2.6)
 ad-generator "https://example.com/product/123"
