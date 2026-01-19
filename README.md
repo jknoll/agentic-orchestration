@@ -10,6 +10,12 @@ Generate video advertisements from product pages using Claude Agent SDK and AI v
 ### Video Showcase
 ![Video Showcase](assets/screenshot-showcase.png)
 
+### Agent Progress
+![Agent Progress](assets/screenshot-progress.png)
+
+### Video Showcase
+![Video Rendered](assets/screenshot-rendered.png)
+
 ## Featured Video Ads
 
 Examples of AI-generated video advertisements:
