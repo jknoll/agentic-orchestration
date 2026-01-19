@@ -18,34 +18,46 @@ Generate video advertisements from product pages using Claude Agent SDK and AI v
 
 ## Featured Video Ads
 
-Examples of AI-generated video advertisements:
+Examples of AI-generated video advertisements (click to play):
 
 <table>
   <tr>
     <td align="center">
-      <video src="output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4">
+        <img src="assets/thumb-apple-vision-pro.jpg" width="280" alt="Apple Vision Pro">
+      </a>
       <br><b>Apple Vision Pro</b>
     </td>
     <td align="center">
-      <video src="output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4">
+        <img src="assets/thumb-pioneer-ddj-xp2.jpg" width="280" alt="Pioneer DDJ-XP2">
+      </a>
       <br><b>Pioneer DDJ-XP2</b>
     </td>
     <td align="center">
-      <video src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4">
+        <img src="assets/thumb-patagonia-fleece.jpg" width="280" alt="Patagonia R1 Fleece">
+      </a>
       <br><b>Patagonia R1 Fleece</b>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <video src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4">
+        <img src="assets/thumb-hermes-scarf.jpg" width="280" alt="Hermes Scarf">
+      </a>
       <br><b>Hermes Scarf</b>
     </td>
     <td align="center">
-      <video src="output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4">
+        <img src="assets/thumb-sony-alpha.jpg" width="280" alt="Sony Alpha 7 V">
+      </a>
       <br><b>Sony Alpha 7 V</b>
     </td>
     <td align="center">
-      <video src="output/www.bmwusa.com_legacy-vehicles_i8.html/freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4" width="280" controls></video>
+      <a href="https://github.com/jknoll/agentic-orchestration/raw/main/output/www.bmwusa.com_legacy-vehicles_i8.html/freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4">
+        <img src="assets/thumb-bmw-i8.jpg" width="280" alt="BMW i8">
+      </a>
       <br><b>BMW i8</b>
     </td>
   </tr>
