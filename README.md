@@ -20,14 +20,36 @@ Generate video advertisements from product pages using Claude Agent SDK and AI v
 
 Examples of AI-generated video advertisements:
 
-| Product | Video |
-|---------|-------|
-| Apple Vision Pro | [Watch Video](output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4) |
-| Pioneer DDJ-XP2 | [Watch Video](output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4) |
-| Patagonia R1 Fleece | [Watch Video](output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4) |
-| Hermes Scarf | [Watch Video](output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4) |
-| Sony Alpha 7 V | [Watch Video](output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4) |
-| BMW i8 | [Watch Video](output/www.bmwusa.com_legacy-vehicles_i8.html/freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4) |
+<table>
+  <tr>
+    <td align="center">
+      <video src="output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4" width="280" controls></video>
+      <br><b>Apple Vision Pro</b>
+    </td>
+    <td align="center">
+      <video src="output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4" width="280" controls></video>
+      <br><b>Pioneer DDJ-XP2</b>
+    </td>
+    <td align="center">
+      <video src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4" width="280" controls></video>
+      <br><b>Patagonia R1 Fleece</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <video src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4" width="280" controls></video>
+      <br><b>Hermes Scarf</b>
+    </td>
+    <td align="center">
+      <video src="output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4" width="280" controls></video>
+      <br><b>Sony Alpha 7 V</b>
+    </td>
+    <td align="center">
+      <video src="output/www.bmwusa.com_legacy-vehicles_i8.html/freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4" width="280" controls></video>
+      <br><b>BMW i8</b>
+    </td>
+  </tr>
+</table>
 
 View all generated videos at the [Video Showcase](http://localhost:8000/video-showcase.html) when running locally.
 
