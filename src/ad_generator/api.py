@@ -12,6 +12,8 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()
 
+import json
+
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -19,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 
 from .agent import AdGeneratorAgent
+from .showcase_parser import parse_readme, ParsedReadme
 
 # Output directory for generated videos
 OUTPUT_DIR = Path("./output")
@@ -90,6 +93,174 @@ class GenerateResponse(BaseModel):
 
     job_id: str
     status: str
+
+
+# Showcase API models
+class ProductShowcaseMetadata(BaseModel):
+    """Product metadata for showcase display."""
+
+    title: str
+    brand: Optional[str] = None
+    price: Optional[str] = None
+    description: Optional[str] = None
+    product_url: Optional[str] = None
+
+
+class VideoShowcaseItem(BaseModel):
+    """A single video item for the showcase."""
+
+    folder_name: str
+    video_path: str
+    provider: str  # "freepik" or "veo3"
+    task_id: str
+    product: ProductShowcaseMetadata
+    prompt: Optional[str] = None
+    generated_at: Optional[str] = None
+    is_featured: bool = False
+    featured_order: Optional[int] = None
+    carousel_title: Optional[str] = None
+
+
+class ShowcaseStats(BaseModel):
+    """Aggregate statistics for the showcase."""
+
+    total_videos: int
+    total_products: int
+    total_brands: int
+    freepik_count: int
+    veo3_count: int
+
+
+class ShowcaseResponse(BaseModel):
+    """Full showcase API response."""
+
+    videos: list[VideoShowcaseItem]
+    stats: ShowcaseStats
+
+
+class FeaturedConfig(BaseModel):
+    """Configuration for a featured video."""
+
+    folder: str
+    video: str
+    display_order: int = 0
+    carousel_title: Optional[str] = None
+
+
+class ShowcaseConfig(BaseModel):
+    """Showcase configuration file structure."""
+
+    version: str = "1.0"
+    featured: list[FeaturedConfig] = []
+    settings: dict = {"max_carousel_items": 6, "default_sort": "newest"}
+
+
+def load_showcase_config() -> ShowcaseConfig:
+    """Load featured videos configuration from JSON file."""
+    config_path = OUTPUT_DIR / "showcase-config.json"
+    if config_path.exists():
+        try:
+            with open(config_path) as f:
+                data = json.load(f)
+                return ShowcaseConfig(**data)
+        except Exception:
+            pass
+    return ShowcaseConfig()
+
+
+def scan_showcase_videos() -> ShowcaseResponse:
+    """Scan output directory and build video showcase data."""
+    config = load_showcase_config()
+
+    # Build lookup for featured videos: (folder, video) -> FeaturedConfig
+    featured_lookup = {(f.folder, f.video): f for f in config.featured}
+
+    videos = []
+    brands: set[str] = set()
+    freepik_count = 0
+    veo3_count = 0
+    product_folders: set[str] = set()
+
+    if not OUTPUT_DIR.exists():
+        return ShowcaseResponse(
+            videos=[],
+            stats=ShowcaseStats(
+                total_videos=0,
+                total_products=0,
+                total_brands=0,
+                freepik_count=0,
+                veo3_count=0,
+            ),
+        )
+
+    for folder in OUTPUT_DIR.iterdir():
+        if not folder.is_dir():
+            continue
+
+        readme_path = folder / "README.md"
+        if not readme_path.exists():
+            continue
+
+        parsed = parse_readme(readme_path)
+        if not parsed:
+            continue
+
+        product_folders.add(folder.name)
+        if parsed.brand:
+            brands.add(parsed.brand)
+
+        # Find all video files in folder
+        for video_file in folder.glob("*.mp4"):
+            filename = video_file.name
+
+            # Determine provider from filename prefix
+            if filename.startswith("freepik_"):
+                provider = "freepik"
+                task_id = filename[8:-4]  # Remove "freepik_" and ".mp4"
+                freepik_count += 1
+            elif filename.startswith("veo3_"):
+                provider = "veo3"
+                task_id = filename[5:-4]  # Remove "veo3_" and ".mp4"
+                veo3_count += 1
+            else:
+                continue  # Skip unknown video formats
+
+            # Check if featured
+            featured_key = (folder.name, filename)
+            featured_config = featured_lookup.get(featured_key)
+
+            video_item = VideoShowcaseItem(
+                folder_name=folder.name,
+                video_path=f"/output/{folder.name}/{filename}",
+                provider=provider,
+                task_id=task_id,
+                product=ProductShowcaseMetadata(
+                    title=parsed.title,
+                    brand=parsed.brand,
+                    price=parsed.price,
+                    description=parsed.description,
+                    product_url=parsed.product_url,
+                ),
+                prompt=parsed.video_prompt,
+                generated_at=parsed.generated_at,
+                is_featured=featured_config is not None,
+                featured_order=featured_config.display_order if featured_config else None,
+                carousel_title=featured_config.carousel_title if featured_config else None,
+            )
+            videos.append(video_item)
+
+    # Sort by generated_at descending (newest first)
+    videos.sort(key=lambda v: v.generated_at or "", reverse=True)
+
+    stats = ShowcaseStats(
+        total_videos=len(videos),
+        total_products=len(product_folders),
+        total_brands=len(brands),
+        freepik_count=freepik_count,
+        veo3_count=veo3_count,
+    )
+
+    return ShowcaseResponse(videos=videos, stats=stats)
 
 
 class JobStore:
@@ -328,6 +499,28 @@ async def download_video(job_id: str):
         media_type="video/mp4",
         filename=f"adflow_{job_id}.mp4",
     )
+
+
+# Showcase API endpoints
+@app.get("/api/showcase/videos", response_model=ShowcaseResponse)
+async def get_showcase_videos():
+    """Get all videos for the showcase, with metadata from output directory."""
+    return scan_showcase_videos()
+
+
+@app.get("/api/showcase/featured", response_model=list[VideoShowcaseItem])
+async def get_featured_videos():
+    """Get only featured videos for README carousel."""
+    showcase = scan_showcase_videos()
+    featured = [v for v in showcase.videos if v.is_featured]
+    featured.sort(key=lambda v: v.featured_order or 999)
+    return featured
+
+
+@app.get("/api/showcase/config", response_model=ShowcaseConfig)
+async def get_showcase_config():
+    """Get current showcase configuration."""
+    return load_showcase_config()
 
 
 # Serve frontend static files - calculate path relative to this file

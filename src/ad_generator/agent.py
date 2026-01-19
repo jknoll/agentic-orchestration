@@ -50,9 +50,9 @@ class AdGeneratorAgent:
         self,
         output_dir: Path = Path("./output"),
         freepik_api_key: Optional[str] = None,
-        use_veo3: bool = False,
+        use_freepik: bool = False,
         veo3_quality: bool = False,
-        duration: VideoDuration = VideoDuration.EXTRA_LONG_15,
+        duration: VideoDuration = VideoDuration.SHORT_5,
         resolution: VideoResolution = VideoResolution.FHD_1080P,
         aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
         voice_over: bool = False,
@@ -68,7 +68,7 @@ class AdGeneratorAgent:
         Args:
             output_dir: Directory to save generated videos
             freepik_api_key: FreePik API key (or uses FREEPIK_API_KEY env var)
-            use_veo3: Whether to also generate video using Kie.ai Veo 3
+            use_freepik: Whether to also generate video using FreePik WAN 2.6
             veo3_quality: Use Veo 3 Quality mode instead of Fast (slower, higher quality)
             duration: Video duration (5, 8, 10, or 15 seconds)
             resolution: Video resolution (720p or 1080p)
@@ -82,7 +82,7 @@ class AdGeneratorAgent:
         """
         self.output_dir = output_dir
         self.freepik_api_key = freepik_api_key
-        self.use_veo3 = use_veo3
+        self.use_freepik = use_freepik
         self.veo3_quality = veo3_quality
         self.duration = duration
         self.resolution = resolution
@@ -194,46 +194,48 @@ class AdGeneratorAgent:
                 results = []
                 errors = []
 
-                # Generate with FreePik (WAN 2.6)
+                # Generate with Kie.ai (Veo 3) - DEFAULT
+                mode = "Quality" if self.veo3_quality else "Fast"
                 try:
-                    shot_mode = "multi-shot" if shot_type == ShotType.MULTI else "single-shot"
-                    print(f"\n[FreePik WAN 2.6] Submitting {shot_mode} video generation request...")
-                    result = await self._generate_freepik(prompt, shot_type)
+                    print(f"\n[Kie.ai Veo 3 {mode}] Submitting video generation request...")
+                    if self.on_log:
+                        self.on_log("Veo3", f"Submitting video generation request ({mode} mode)...")
+                    result = await self._generate_kie(prompt)
                     results.append(result)
-                    print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
+                    print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
                     if self.on_log:
-                        self.on_log("FreePik", f"Video generated successfully")
-                except FreePikError as e:
-                    errors.append(f"FreePik: {e}")
-                    print(f"[FreePik WAN 2.6] Error: {e}")
+                        self.on_log("Veo3", f"Video generated successfully")
+                except KieAIError as e:
+                    error_str = str(e)
+                    errors.append(f"Kie.ai: {error_str}")
+                    # Make credit errors more visible
+                    if "insufficient credits" in error_str.lower() or "credit" in error_str.lower():
+                        print(f"\n{'='*60}")
+                        print(f"[Kie.ai Veo 3 {mode}] CREDIT ERROR")
+                        print(f"{'='*60}")
+                        print(f"You have run out of Kie.ai credits.")
+                        print(f"Please add more credits at: https://kie.ai")
+                        print(f"{'='*60}\n")
+                    else:
+                        print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
                     if self.on_log:
-                        self.on_log("FreePik", f"Error: {e}")
+                        self.on_log("Veo3", f"Error: {e}")
 
-                # Generate with Kie.ai (Veo 3) if enabled
-                if self.use_veo3:
-                    mode = "Quality" if self.veo3_quality else "Fast"
+                # Generate with FreePik (WAN 2.6) if enabled
+                if self.use_freepik:
                     try:
-                        print(f"\n[Kie.ai Veo 3 {mode}] Submitting video generation request...")
-                        if self.on_log:
-                            self.on_log("Veo3", f"Submitting video generation request ({mode} mode)...")
-                        result = await self._generate_kie(prompt)
+                        shot_mode = "multi-shot" if shot_type == ShotType.MULTI else "single-shot"
+                        print(f"\n[FreePik WAN 2.6] Submitting {shot_mode} video generation request...")
+                        result = await self._generate_freepik(prompt, shot_type)
                         results.append(result)
-                        print(f"[Kie.ai Veo 3 {mode}] Video generated: {result.local_path}")
+                        print(f"[FreePik WAN 2.6] Video generated: {result.local_path}")
                         if self.on_log:
-                            self.on_log("Veo3", f"Video generated successfully")
-                    except KieAIError as e:
-                        error_str = str(e)
-                        errors.append(f"Kie.ai: {error_str}")
-                        # Make credit errors more visible
-                        if "insufficient credits" in error_str.lower() or "credit" in error_str.lower():
-                            print(f"\n{'='*60}")
-                            print(f"[Kie.ai Veo 3 {mode}] CREDIT ERROR")
-                            print(f"{'='*60}")
-                            print(f"You have run out of Kie.ai credits.")
-                            print(f"Please add more credits at: https://kie.ai")
-                            print(f"{'='*60}\n")
-                        else:
-                            print(f"[Kie.ai Veo 3 {mode}] Error: {e}")
+                            self.on_log("FreePik", f"Video generated successfully")
+                    except FreePikError as e:
+                        errors.append(f"FreePik: {e}")
+                        print(f"[FreePik WAN 2.6] Error: {e}")
+                        if self.on_log:
+                            self.on_log("FreePik", f"Error: {e}")
 
                 self._video_results = results
 

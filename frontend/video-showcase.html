@@ -206,15 +206,6 @@
       }
     }
 
-    .fade-in:nth-child(1) { animation-delay: 0.1s; }
-    .fade-in:nth-child(2) { animation-delay: 0.15s; }
-    .fade-in:nth-child(3) { animation-delay: 0.2s; }
-    .fade-in:nth-child(4) { animation-delay: 0.25s; }
-    .fade-in:nth-child(5) { animation-delay: 0.3s; }
-    .fade-in:nth-child(6) { animation-delay: 0.35s; }
-    .fade-in:nth-child(7) { animation-delay: 0.4s; }
-    .fade-in:nth-child(8) { animation-delay: 0.45s; }
-
     /* Video card hover effect */
     .video-card:hover video {
       transform: scale(1.02);
@@ -222,6 +213,20 @@
 
     .video-card video {
       transition: transform 0.3s ease;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366F1;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -274,19 +279,20 @@
         AI-generated video advertisements from real product URLs. Each video crafted in seconds by our autonomous agent pipeline.
       </p>
 
-      <div class="flex items-center justify-center gap-8 flex-wrap">
+      <div id="hero-stats" class="flex items-center justify-center gap-8 flex-wrap">
+        <!-- Stats will be populated dynamically -->
         <div class="flex items-center gap-2">
-          <span class="font-display text-3xl text-primary">19</span>
+          <span class="font-display text-3xl text-primary">--</span>
           <span class="font-mono text-xs text-slate-500">VIDEOS</span>
         </div>
         <div class="w-px h-8 bg-slate-800"></div>
         <div class="flex items-center gap-2">
-          <span class="font-display text-3xl text-secondary">11</span>
+          <span class="font-display text-3xl text-secondary">--</span>
           <span class="font-mono text-xs text-slate-500">PRODUCTS</span>
         </div>
         <div class="w-px h-8 bg-slate-800"></div>
         <div class="flex items-center gap-2">
-          <span class="font-display text-3xl text-amber-400">6</span>
+          <span class="font-display text-3xl text-amber-400">--</span>
           <span class="font-mono text-xs text-slate-500">BRANDS</span>
         </div>
       </div>
@@ -303,392 +309,18 @@
           <span class="font-mono text-xs text-slate-500 tracking-[0.2em]">GALLERY_01</span>
         </div>
         <div class="h-px flex-1 bg-gradient-to-r from-slate-800 to-transparent"></div>
-        <span class="font-mono text-xs text-primary tracking-wider">19 ITEMS</span>
+        <span id="gallery-count" class="font-mono text-xs text-primary tracking-wider">LOADING...</span>
       </div>
 
       <!-- Video Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-
-        <!-- Video Card: Sony Alpha 7 V -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata" poster="">
-              <source src="output/ilce7m5mb-20260116-140552/freepik_01e4f8f5-635b-4d25-bd50-0ed82851af0a.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Sony</span>
-              <span class="font-mono text-xs text-secondary">$3,099.99</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">Alpha 7 V Camera</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Full-frame Mirrorless Interchangeable Lens Camera</p>
+      <div id="video-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Loading state -->
+        <div class="col-span-full flex items-center justify-center py-20">
+          <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="font-mono text-xs text-slate-500">LOADING VIDEOS...</p>
           </div>
         </div>
-
-        <!-- Video Card: Sony Alpha 7 V (Veo3) -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Sony</span>
-              <span class="font-mono text-xs text-secondary">$3,099.99</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">Alpha 7 V Camera</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Full-frame Mirrorless Interchangeable Lens Camera</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-FLX10 #1 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-flx10/freepik_d0539d52-8c9b-4326-8e24-75c93d0b3a36.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$1,729.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-FLX10</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional 2-channel DJ controller</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-FLX10 #2 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-flx10/freepik_06b0d5a0-37b3-4fa8-96e9-5321c72d7ba7.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$1,729.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-FLX10</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional 2-channel DJ controller</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-REV7 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-rev7/freepik_f9c909c3-ad24-4442-81dd-08791e804a78.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$1,999.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-REV7</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Motorized jog wheels with On Jog Display</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-REV1 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-rev1/freepik_63f10f01-6bf8-4c55-9a5c-970cb74f0e68.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$299.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-REV1</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Battle-style layout for Serato DJ Lite</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-XP2 #1 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-xp2/freepik_ff9ec84e-b6f8-4206-80d2-3bd920ec5fd0.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$349.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-XP2 #2 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-xp2/freepik_4bc4b3b2-d43b-441a-8dea-2c5cbc5876e6.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$349.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-XP2 Veo3 #1 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$349.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
-          </div>
-        </div>
-
-        <!-- Video Card: DDJ-XP2 Veo3 #2 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_ddj-xp2/veo3_a38a64e7f3d07c405ac67c6326788d47.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$349.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">DDJ-XP2</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Sub controller with 32 RGB performance pads</p>
-          </div>
-        </div>
-
-        <!-- Video Card: XDJ-700 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/pioneerdjstore.com_products_xdj-700/freepik_691549cb-8493-4caa-ac81-a3902d42d8cd.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-secondary">$829.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">XDJ-700</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Compact multi-player with 7-inch touchscreen</p>
-          </div>
-        </div>
-
-        <!-- Video Card: CDJ-3000 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.pioneerdj.com_en_product_player_cdj-3000_black_overview/freepik_eb302231-b006-43ca-8b4f-3e73c3aba6d4.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Pioneer DJ</span>
-              <span class="font-mono text-xs text-primary">FLAGSHIP</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">CDJ-3000</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Professional DJ multi player</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Apple Vision Pro -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.apple.com_apple-vision-pro/freepik_22e8941d-e018-4eba-9fa5-ae975048f84b.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Apple</span>
-              <span class="font-mono text-xs text-primary">PREMIUM</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">Vision Pro</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Spatial computing headset with M5 chip</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Apple Vision Pro (Veo3) -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Apple</span>
-              <span class="font-mono text-xs text-primary">PREMIUM</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">Vision Pro</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Spatial computing headset with M5 chip</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Hermes Scarf #1 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_967abcc0-eea3-442a-9a1d-7abbfdc4b70a.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Hermes</span>
-              <span class="font-mono text-xs text-amber-400">LUXURY</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">L'Esprit s'Envole</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Silk scarf 90cm</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Hermes Scarf #2 -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Hermes</span>
-              <span class="font-mono text-xs text-amber-400">LUXURY</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">L'Esprit s'Envole</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Silk scarf 90cm</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Osprey Aether -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/www.osprey.com_aether-trade-plus-100-aethrpl100s21-291/freepik_075143ee-5cbf-439a-8c3c-b6bf2380406b.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Osprey</span>
-              <span class="font-mono text-xs text-secondary">OUTDOOR</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">Aether Plus 100</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">100L technical hiking backpack</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Patagonia R1 Air Fleece -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Patagonia</span>
-              <span class="font-mono text-xs text-secondary">$189.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">R1 Air Fleece Hoody</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Lightweight breathable technical fleece</p>
-          </div>
-        </div>
-
-        <!-- Video Card: Patagonia R1 Air Fleece (Veo3) -->
-        <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border">
-          <div class="aspect-video bg-dark relative scanlines">
-            <video class="w-full h-full object-cover" controls preload="metadata">
-              <source src="output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/veo3_9e4513510cd389698588f60732fd0608.mp4" type="video/mp4">
-            </video>
-            <div class="absolute top-2 left-2">
-              <span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-mono text-xs text-slate-600">Patagonia</span>
-              <span class="font-mono text-xs text-secondary">$189.00</span>
-            </div>
-            <h3 class="font-display text-lg tracking-wide text-white">R1 Air Fleece Hoody</h3>
-            <p class="text-slate-500 text-xs mt-1 line-clamp-2">Lightweight breathable technical fleece</p>
-          </div>
-        </div>
-
       </div>
     </div>
   </section>
@@ -705,17 +337,18 @@
           <span class="status-badge text-secondary">COMPLETE</span>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div id="stats-grid" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <!-- Stats will be populated dynamically -->
           <div class="text-center">
-            <p class="font-display text-4xl text-white mb-1">19</p>
+            <p class="font-display text-4xl text-white mb-1">--</p>
             <p class="font-mono text-xs text-slate-500">VIDEOS GENERATED</p>
           </div>
           <div class="text-center">
-            <p class="font-display text-4xl text-primary mb-1">13</p>
+            <p class="font-display text-4xl text-primary mb-1">--</p>
             <p class="font-mono text-xs text-slate-500">FREEPIK RENDERS</p>
           </div>
           <div class="text-center">
-            <p class="font-display text-4xl text-amber-400 mb-1">6</p>
+            <p class="font-display text-4xl text-amber-400 mb-1">--</p>
             <p class="font-mono text-xs text-slate-500">VEO3 RENDERS</p>
           </div>
           <div class="text-center">
@@ -779,6 +412,203 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    // Video Showcase Application
+    const ShowcaseApp = {
+      videos: [],
+      stats: null,
+      loading: true,
+      error: null,
+
+      async init() {
+        await this.fetchVideos();
+        this.render();
+      },
+
+      async fetchVideos() {
+        try {
+          const response = await fetch('/api/showcase/videos');
+          if (!response.ok) throw new Error('Failed to fetch videos');
+          const data = await response.json();
+          this.videos = data.videos;
+          this.stats = data.stats;
+          this.loading = false;
+        } catch (err) {
+          this.error = err.message;
+          this.loading = false;
+          console.error('Error fetching showcase videos:', err);
+        }
+      },
+
+      getProviderBadge(provider) {
+        if (provider === 'freepik') {
+          return `<span class="status-badge text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded backdrop-blur-sm">FREEPIK</span>`;
+        }
+        return `<span class="status-badge text-amber-400 bg-amber-400/20 px-2 py-1 rounded backdrop-blur-sm">VEO3</span>`;
+      },
+
+      getPriceDisplay(video) {
+        if (video.product.price) {
+          return `<span class="font-mono text-xs text-secondary">${this.escapeHtml(video.product.price)}</span>`;
+        }
+        // Return tag for items without price
+        if (video.is_featured) {
+          return `<span class="font-mono text-xs text-primary">FEATURED</span>`;
+        }
+        return `<span class="font-mono text-xs text-primary">PREMIUM</span>`;
+      },
+
+      escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      },
+
+      truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+      },
+
+      renderVideoCard(video, index) {
+        const delay = Math.min(index * 0.05, 0.5);
+        const title = this.escapeHtml(video.product.title);
+        const brand = this.escapeHtml(video.product.brand || 'Unknown');
+        const description = this.escapeHtml(this.truncateText(video.product.description, 100));
+
+        return `
+          <div class="panel rounded-lg overflow-hidden video-card fade-in glow-border" style="animation-delay: ${delay}s">
+            <div class="aspect-video bg-dark relative scanlines">
+              <video class="w-full h-full object-cover" controls preload="metadata">
+                <source src="${video.video_path}" type="video/mp4">
+              </video>
+              <div class="absolute top-2 left-2">
+                ${this.getProviderBadge(video.provider)}
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-mono text-xs text-slate-600">${brand}</span>
+                ${this.getPriceDisplay(video)}
+              </div>
+              <h3 class="font-display text-lg tracking-wide text-white">${title}</h3>
+              <p class="text-slate-500 text-xs mt-1 line-clamp-2">${description}</p>
+            </div>
+          </div>
+        `;
+      },
+
+      renderHeroStats() {
+        if (!this.stats) return;
+
+        const heroStats = document.getElementById('hero-stats');
+        if (heroStats) {
+          heroStats.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="font-display text-3xl text-primary">${this.stats.total_videos}</span>
+              <span class="font-mono text-xs text-slate-500">VIDEOS</span>
+            </div>
+            <div class="w-px h-8 bg-slate-800"></div>
+            <div class="flex items-center gap-2">
+              <span class="font-display text-3xl text-secondary">${this.stats.total_products}</span>
+              <span class="font-mono text-xs text-slate-500">PRODUCTS</span>
+            </div>
+            <div class="w-px h-8 bg-slate-800"></div>
+            <div class="flex items-center gap-2">
+              <span class="font-display text-3xl text-amber-400">${this.stats.total_brands}</span>
+              <span class="font-mono text-xs text-slate-500">BRANDS</span>
+            </div>
+          `;
+        }
+      },
+
+      renderStatsSection() {
+        if (!this.stats) return;
+
+        const statsGrid = document.getElementById('stats-grid');
+        if (statsGrid) {
+          statsGrid.innerHTML = `
+            <div class="text-center">
+              <p class="font-display text-4xl text-white mb-1">${this.stats.total_videos}</p>
+              <p class="font-mono text-xs text-slate-500">VIDEOS GENERATED</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-4xl text-primary mb-1">${this.stats.freepik_count}</p>
+              <p class="font-mono text-xs text-slate-500">FREEPIK RENDERS</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-4xl text-amber-400 mb-1">${this.stats.veo3_count}</p>
+              <p class="font-mono text-xs text-slate-500">VEO3 RENDERS</p>
+            </div>
+            <div class="text-center">
+              <p class="font-display text-4xl text-secondary mb-1">~60s</p>
+              <p class="font-mono text-xs text-slate-500">AVG GEN TIME</p>
+            </div>
+          `;
+        }
+      },
+
+      render() {
+        // Update hero stats
+        this.renderHeroStats();
+
+        // Update gallery count
+        const galleryCount = document.getElementById('gallery-count');
+        if (galleryCount) {
+          if (this.stats) {
+            galleryCount.textContent = `${this.stats.total_videos} ITEMS`;
+          } else if (this.error) {
+            galleryCount.textContent = 'ERROR';
+          }
+        }
+
+        // Update video grid
+        const videoGrid = document.getElementById('video-grid');
+        if (videoGrid) {
+          if (this.loading) {
+            videoGrid.innerHTML = `
+              <div class="col-span-full flex items-center justify-center py-20">
+                <div class="text-center">
+                  <div class="loading-spinner mx-auto mb-4"></div>
+                  <p class="font-mono text-xs text-slate-500">LOADING VIDEOS...</p>
+                </div>
+              </div>
+            `;
+          } else if (this.error) {
+            videoGrid.innerHTML = `
+              <div class="col-span-full text-center py-20">
+                <p class="font-mono text-sm text-red-500 mb-2">ERROR LOADING VIDEOS</p>
+                <p class="font-mono text-xs text-slate-500">${this.escapeHtml(this.error)}</p>
+                <button onclick="ShowcaseApp.init()" class="mt-4 px-4 py-2 bg-primary/20 text-primary font-mono text-xs rounded hover:bg-primary/30 transition-colors">
+                  RETRY
+                </button>
+              </div>
+            `;
+          } else if (this.videos.length === 0) {
+            videoGrid.innerHTML = `
+              <div class="col-span-full text-center py-20">
+                <p class="font-mono text-sm text-slate-500 mb-2">NO VIDEOS FOUND</p>
+                <p class="font-mono text-xs text-slate-600">Generate some videos to see them here.</p>
+                <a href="/" class="inline-block mt-4 px-4 py-2 bg-primary font-mono text-xs text-white rounded hover:bg-primary/90 transition-colors">
+                  START GENERATING
+                </a>
+              </div>
+            `;
+          } else {
+            videoGrid.innerHTML = this.videos.map((v, i) => this.renderVideoCard(v, i)).join('');
+          }
+        }
+
+        // Update stats section
+        this.renderStatsSection();
+      }
+    };
+
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', () => ShowcaseApp.init());
+  </script>
 
 </body>
 </html>

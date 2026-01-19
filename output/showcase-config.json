@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "featured": [
+    {
+      "folder": "www.apple.com_apple-vision-pro",
+      "video": "veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4",
+      "display_order": 1,
+      "carousel_title": "Apple Vision Pro"
+    },
+    {
+      "folder": "pioneerdjstore.com_products_ddj-xp2",
+      "video": "veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4",
+      "display_order": 2,
+      "carousel_title": "DJ Controller Ad"
+    },
+    {
+      "folder": "patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html",
+      "video": "freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4",
+      "display_order": 3,
+      "carousel_title": "Outdoor Adventure"
+    },
+    {
+      "folder": "www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03",
+      "video": "freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4",
+      "display_order": 4,
+      "carousel_title": "Luxury Fashion"
+    },
+    {
+      "folder": "ilce7m5mb-20260116-140552",
+      "video": "veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4",
+      "display_order": 5,
+      "carousel_title": "Sony Camera"
+    },
+    {
+      "folder": "www.bmwusa.com_legacy-vehicles_i8.html",
+      "video": "freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4",
+      "display_order": 6,
+      "carousel_title": "BMW i8"
+    }
+  ],
+  "settings": {
+    "max_carousel_items": 6,
+    "default_sort": "newest"
+  }
+}

@@ -123,9 +123,9 @@ def print_tool_call(tool_name: str, args: dict) -> None:
 async def run_generator(
     product_url: str,
     base_output_dir: Path,
-    use_veo3: bool = False,
+    use_freepik: bool = False,
     veo3_quality: bool = False,
-    duration: VideoDuration = VideoDuration.EXTRA_LONG_15,
+    duration: VideoDuration = VideoDuration.SHORT_5,
     resolution: VideoResolution = VideoResolution.FHD_1080P,
     aspect_ratio: AspectRatio = AspectRatio.LANDSCAPE_16_9,
     force: bool = False,
@@ -140,11 +140,10 @@ async def run_generator(
     print(f"\nProduct URL: {product_url}")
     print(f"Output directory: {base_output_dir}")
     print(f"Duration: {duration.value}s | Resolution: {resolution.value} | Aspect: {aspect_ratio.value}")
-    if use_veo3:
-        mode = "Quality" if veo3_quality else "Fast"
-        print(f"Veo 3 (Kie.ai): Enabled ({mode} mode)")
-    else:
-        print(f"Veo 3 (Kie.ai): Disabled")
+    mode = "Quality" if veo3_quality else "Fast"
+    print(f"Veo 3 (Kie.ai): Enabled ({mode} mode) [default]")
+    if use_freepik:
+        print(f"FreePik WAN 2.6: Enabled")
     if voice_over:
         print(f"Voice-Over: Enabled")
     if presenter:
@@ -167,7 +166,7 @@ async def run_generator(
 
     agent = AdGeneratorAgent(
         output_dir=output_dir,
-        use_veo3=use_veo3,
+        use_freepik=use_freepik,
         veo3_quality=veo3_quality,
         duration=duration,
         resolution=resolution,
@@ -235,13 +234,16 @@ def cli() -> None:
         epilog="""
 Examples:
   ad-generator "https://example.com/product/123"
-  ad-generator "https://amazon.com/dp/B0..." --veo3
+  ad-generator "https://amazon.com/dp/B0..." --freepik
+  ad-generator "https://example.com/product" --veo3-quality
   ad-generator "https://example.com/product" --output ./my-ads --force
 
+Default Model: Veo 3 Fast (Kie.ai) - ~$0.40 per 5s video
+
 Environment Variables:
-  FREEPIK_API_KEY       FreePik API key for WAN 2.6 video generation
+  KIE_API_KEY           Kie.ai API key for Veo 3 (required)
   ANTHROPIC_API_KEY     Anthropic API key (optional if using Claude Code auth)
-  KIE_API_KEY           Kie.ai API key (required for --veo3)
+  FREEPIK_API_KEY       FreePik API key for WAN 2.6 (required for --freepik)
         """,
     )
     parser.add_argument(
@@ -256,9 +258,9 @@ Environment Variables:
         help=f"Base output directory for generated videos (default: {DEFAULT_OUTPUT_DIR})",
     )
     parser.add_argument(
-        "--veo3",
+        "--freepik",
         action="store_true",
-        help="Also generate video using Kie.ai Veo 3 Fast (requires KIE_API_KEY)",
+        help="Also generate video using FreePik WAN 2.6 (requires FREEPIK_API_KEY)",
     )
     parser.add_argument(
         "--veo3-quality",
@@ -270,8 +272,8 @@ Environment Variables:
         "--duration",
         type=int,
         choices=[5, 8, 10, 15],
-        default=15,
-        help="Video duration in seconds (default: 15). FreePik supports 5/10/15; Veo 3 generates ~8s clips.",
+        default=5,
+        help="Video duration in seconds (default: 5). FreePik supports 5/10/15; Veo 3 generates ~8s clips.",
     )
     parser.add_argument(
         "-r",
@@ -310,8 +312,10 @@ Environment Variables:
 
     args = parser.parse_args()
 
-    # If --veo3-quality is set, automatically enable veo3
-    use_veo3 = args.veo3 or args.veo3_quality
+    # Veo3 is now the default; --freepik adds FreePik generation
+    # use_veo3 is always True (Veo3 is default)
+    use_veo3 = True
+    use_freepik = args.freepik
 
     # Convert CLI args to enums
     duration = VideoDuration(args.duration)
@@ -326,7 +330,7 @@ Environment Variables:
         run_generator,
         args.url,
         args.output,
-        use_veo3,
+        use_freepik,
         args.veo3_quality,
         duration,
         resolution,

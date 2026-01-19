@@ -2,6 +2,35 @@
 
 Generate video advertisements from product pages using Claude Agent SDK and AI video generation APIs.
 
+## Screenshots
+
+### Main Interface
+![Main Interface](assets/screenshot-main.png)
+
+### Video Showcase
+![Video Showcase](assets/screenshot-showcase.png)
+
+### Agent Progress
+![Agent Progress](assets/screenshot-progress.png)
+
+### Video Showcase
+![Video Rendered](assets/screenshot-rendered.png)
+
+## Featured Video Ads
+
+Examples of AI-generated video advertisements:
+
+| Product | Video |
+|---------|-------|
+| Apple Vision Pro | [Watch Video](output/www.apple.com_apple-vision-pro/veo3_2c359982e55a7eb1d1e2a29f3d4a8162.mp4) |
+| Pioneer DDJ-XP2 | [Watch Video](output/pioneerdjstore.com_products_ddj-xp2/veo3_cfcb01132ca44ef15c0e0d443a12f1e5.mp4) |
+| Patagonia R1 Fleece | [Watch Video](output/patagonia.com_product_womens-r1-air-fleece-midlayer-full-zip-hoody_40261.html/freepik_6580f739-edb2-4c8f-9755-93e881f52746.mp4) |
+| Hermes Scarf | [Watch Video](output/www.hermes.com_us_en_product_l-esprit-s-envole-scarf-90-H004300Sv03/freepik_cf86c02b-51cf-49dd-982b-b9c6169e113b.mp4) |
+| Sony Alpha 7 V | [Watch Video](output/ilce7m5mb-20260116-140552/veo3_6e0a1b7a3737d6bdc512aebb23bee258.mp4) |
+| BMW i8 | [Watch Video](output/www.bmwusa.com_legacy-vehicles_i8.html/freepik_7b765817-57f4-4395-ad7a-6f7b029f5a2f.mp4) |
+
+View all generated videos at the [Video Showcase](http://localhost:8000/video-showcase.html) when running locally.
+
 ## Overview
 
 This tool takes a product detail page URL as input and automatically:
@@ -11,11 +40,11 @@ This tool takes a product detail page URL as input and automatically:
 
 ## Supported Video Models
 
-| Provider | Model | Cost (8-sec) | Via |
+| Provider | Model | Cost (5-sec) | Via |
 |----------|-------|--------------|-----|
-| FreePik | WAN 2.6 | ~$0.50 | Default |
-| Kie.ai | Veo 3 Fast | $0.40 | `--veo3` flag |
-| Kie.ai | Veo 3 Quality | $2.00 | `--veo3 --veo3-quality` flags |
+| Kie.ai | Veo 3 Fast | ~$0.40 | Default |
+| Kie.ai | Veo 3 Quality | ~$2.00 | `--veo3-quality` flag |
+| FreePik | WAN 2.6 | ~$0.50 | `--freepik` flag |
 
 ## Installation
 
@@ -23,8 +52,8 @@ This tool takes a product detail page URL as input and automatically:
 
 - Python 3.10+
 - Claude Code CLI (for authentication)
-- FreePik API key
-- Kie.ai API key (optional, for Veo 3)
+- Kie.ai API key (for Veo 3 - default model)
+- FreePik API key (optional, for `--freepik` flag)
 
 ### Setup
 
@@ -75,14 +104,17 @@ This starts a FastAPI server at http://localhost:8000 with:
 ### CLI
 
 ```bash
-# Basic usage (FreePik WAN 2.6)
+# Basic usage (Veo 3 Fast - default, 5s video)
 ad-generator "https://example.com/product/123"
 
-# With Veo 3 Fast via Kie.ai (default mode)
-ad-generator "https://example.com/product/123" --veo3
+# With Veo 3 Quality (higher quality, slower, more expensive)
+ad-generator "https://example.com/product/123" --veo3-quality
 
-# With Veo 3 Quality via Kie.ai (higher quality, slower, more expensive)
-ad-generator "https://example.com/product/123" --veo3 --veo3-quality
+# Also generate with FreePik WAN 2.6
+ad-generator "https://example.com/product/123" --freepik
+
+# Specify duration (5, 8, 10, or 15 seconds)
+ad-generator "https://example.com/product/123" -d 10
 
 # Specify output directory
 ad-generator "https://example.com/product/123" --output ./my-ads
@@ -117,9 +149,9 @@ The tool automatically detects if a video has already been generated for a URL b
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `FREEPIK_API_KEY` | Yes | FreePik API key for WAN 2.6 |
+| `KIE_API_KEY` | Yes | Kie.ai API key for Veo 3 (default model) |
 | `ANTHROPIC_API_KEY` | No | Anthropic API key (optional if using Claude Code auth) |
-| `KIE_API_KEY` | For --veo3 | Kie.ai API key for Veo 3 |
+| `FREEPIK_API_KEY` | For --freepik | FreePik API key for WAN 2.6 |
 
 ## Project Structure
 
@@ -158,6 +190,14 @@ Run tests:
 ```bash
 pytest
 ```
+
+## Deployment
+
+For production deployment to Vercel, see [VERCEL.md](VERCEL.md) for step-by-step instructions including:
+- Vercel account setup
+- Environment variable configuration
+- Deployment process
+- Testing and troubleshooting
 
 ## License
 
