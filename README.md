@@ -232,7 +232,3 @@ For production deployment to Vercel, see [VERCEL.md](VERCEL.md) for step-by-step
 - Environment variable configuration
 - Deployment process
 - Testing and troubleshooting
-
-## License
-
-MIT
