@@ -52,5 +52,13 @@ The system follows a three-stage pipeline:
 
 ## Environment Variables
 
-- `FREEPIK_API_KEY` (required): FreePik API key for video generation
-- `ANTHROPIC_API_KEY` (optional): Falls back to Claude Code CLI authentication
+The credentials should be stored in the environment in an .env file, which should never be committed to github. An env.example can be committed and includes credential documentation.
+
+## Working process and TODO.md
+Work from the list of items in TODO.md as a default next action, or when directed to do so by the user.
+
+Create a GitHub issue for each item you undertake in the TODO.md file, Link from the `TODO.md` to the GitHub issue. Work in a feature branch. When a TODO is complete, create a pull request for review. Update the TODO.md file to indicate that the TODO has been addressed and a pull request created. 
+
+## Reviewing Frontend Changes
+
+In order to review front-end changes, use the local web server and Claude for Chrome. 

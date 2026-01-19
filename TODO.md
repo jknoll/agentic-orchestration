@@ -1,14 +1,7 @@
+1) Update the video showcase: include all of the files and metadata generated in the output directory. 
 
-This is a project which uses a Python [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) agent to take as input:
+2) Add a video carousel to the README.md with examples of some of the generated videos and a configuration which allows me to select the best videos for inclusion in the carousel.  
 
-1) Product metadata from a reference product detail page.
+3) Add a screenshot Of the running/rendered index.html file to the README.md to give a viewer a sense of the rendered application's user interface. 
 
-And outputs:
-
-2) A script, shot list, any reference brand and product images, and other artifacts necessary to create a set of detailed prompts to create a storyboard of the proposed ad.
-
-3) Uses these images and/or storyboard to create a Veo3-generated video short advertisement using FreePik's API: https://docs.freepik.com/introduction. The credentials should be stored in the environment in an .env file, which should never be committed to github. An env.example can be committed.
-
-As a first milestone, we should close the loop to genereate a first video from input product detail page to output Veo3-generated video. We will then iterate on the closed loop to add generation of the intermediate artifacts as needed.
-
-As a second phase of development, we should use either the [Yutori browsing API](https://docs.yutori.com/reference/browsing-create) or the [TinyFish API](https://docs.mino.ai/) to do the product research.
+4) Add step-by-step instructions for how to deploy to Vercel and how to test, including any permissions/API keys required, and step-by-step instructions for the Vercel signup process. Add these to a VERCEL.md file and link to this file from the main README.md file.
