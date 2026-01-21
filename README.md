@@ -1,4 +1,4 @@
-# Ad Generator
+# AdFlow Agentic Creative Director
 
 Generate video advertisements from product pages using Claude Agent SDK and AI video generation APIs.
 
